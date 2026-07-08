@@ -1,0 +1,39 @@
+import { createServerClient } from '@/lib/supabase';
+import LiveSession from '@/components/LiveSession';
+
+export default async function LivePage({ params }) {
+  const { id } = await params;
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('live_sessions')
+    .select('id, state, response, include_auth, is_collaborative, host_connected, expires_at')
+    .eq('id', id)
+    .gt('expires_at', new Date().toISOString())
+    .single();
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <p className="text-gray-400 font-mono text-sm mb-2">Session not found</p>
+          <p className="text-gray-600 text-xs mb-4">This live session may have ended or expired.</p>
+          <a href="/" className="text-indigo-400 hover:text-indigo-300 text-sm font-mono transition-colors">
+            ← Go to Quiver
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <LiveSession
+      sessionId={data.id}
+      initialState={data.state}
+      initialResponse={data.response}
+      includeAuth={data.include_auth}
+      isCollaborative={data.is_collaborative !== false}
+      initialHostConnected={data.host_connected}
+      expiresAt={data.expires_at}
+    />
+  );
+}

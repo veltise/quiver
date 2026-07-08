@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Clickable JSON values in response body */
+[data-v] { cursor: pointer; }
+[data-v]:hover { opacity: 0.7; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  /* Backgrounds */
+  --color-bg:             oklch(9%  0.01 264);
+  --color-surface:        oklch(12% 0.01 264);
+  --color-surface-raised: oklch(16% 0.01 264);
+
+  /* Borders */
+  --color-border:        oklch(22% 0.01 264);
+  --color-border-subtle: oklch(28% 0.01 264);
+
+  /* Text */
+  --color-text:  oklch(93% 0 0);
+  --color-muted: oklch(60% 0 0);
+  --color-dim:   oklch(42% 0 0);
+
+  /* Primary accent — indigo (Send button, active tabs) */
+  --color-accent:       oklch(55% 0.22 264);
+  --color-accent-hover: oklch(62% 0.22 264);
+
+  /* Share accent — violet */
+  --color-share:       oklch(60% 0.22 300);
+  --color-share-hover: oklch(67% 0.22 300);
+
+  /* Status */
+  --color-success: oklch(72% 0.18 145);
+  --color-warning: oklch(78% 0.17 85);
+  --color-error:   oklch(65% 0.22 25);
 }

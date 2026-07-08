@@ -1,13 +1,16 @@
 {
-  "name": "api-playground",
+  "name": "quiver",
   "version": "0.1.0",
   "private": true,
+  "description": "A fast, shareable HTTP client. Build requests, save them to your quiver, fire at any endpoint.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "lucide-react": "^1.23.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
