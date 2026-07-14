@@ -1,6 +1,8 @@
 import Playground from '@/components/Playground';
 import { createServerClient } from '@/lib/supabase';
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function SharedPage({ params }) {
   const { id } = await params;
   const supabase = createServerClient();

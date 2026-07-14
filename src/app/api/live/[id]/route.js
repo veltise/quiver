@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase';
 import { dbErr, getClientIp, rateLimit, tooManyRequests } from '@/lib/db';
 
 export async function GET(request, { params }) {
+  if (!await rateLimit(`read:${getClientIp(request)}`, { limit: 60, window: 60 })) return tooManyRequests();
   const { id } = await params;
   const supabase = createServerClient();
   const { data, error } = await supabase
@@ -35,22 +36,26 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  // All host-side writes (state, response, host_connected) require a valid host token
-  if ('host_connected' in fields || 'state' in fields || 'response' in fields) {
+  const supabase = createServerClient();
+  const { data: session } = await supabase
+    .from('live_sessions')
+    .select('host_token, is_collaborative')
+    .eq('id', id)
+    .single();
+  if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+
+  // host_connected is always host-only; state/response only need the host token
+  // in Demo mode (is_collaborative === false) — in Collaborative mode any participant
+  // with the link is meant to be able to edit, by design.
+  const needsHostAuth = 'host_connected' in fields || session.is_collaborative === false;
+  if (needsHostAuth) {
     const hostToken = request.headers.get('x-host-token');
     if (!hostToken) return NextResponse.json({ error: 'Missing host token' }, { status: 401 });
-    const supabase = createServerClient();
-    const { data: session } = await supabase
-      .from('live_sessions')
-      .select('host_token')
-      .eq('id', id)
-      .single();
-    if (!session || session.host_token !== hostToken) {
+    if (session.host_token !== hostToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
   }
 
-  const supabase = createServerClient();
   const { error } = await supabase.from('live_sessions').update(fields).eq('id', id);
   if (error) return dbErr(error);
   return NextResponse.json({ ok: true });

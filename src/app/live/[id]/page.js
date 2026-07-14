@@ -1,6 +1,9 @@
 import { createServerClient } from '@/lib/supabase';
 import LiveSession from '@/components/LiveSession';
 
+// Live session links can carry shared auth tokens — never let them get crawled/indexed
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function LivePage({ params }) {
   const { id } = await params;
   const supabase = createServerClient();

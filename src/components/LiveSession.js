@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import { applyEnv } from '@/lib/env';
 import { buildEffectiveHeaders, buildBody, readStreamBody } from '@/lib/request';
-import { encryptState } from '@/lib/crypto';
+import { encryptState, decryptState } from '@/lib/crypto';
 import { nameToSlug, suggestName } from '@/lib/saved';
 import { extractGroup, isJsonInvalid } from '@/lib/utils';
 import { ENV_SETS_KEY } from '@/lib/constants';
 import { getSessionId } from '@/lib/session';
+import { useToast } from '@/hooks/useToast';
 import { DEFAULT_STATE } from './Playground';
 import ParamsEditor from './ParamsEditor';
 import PulsingDot from './PulsingDot';
@@ -17,6 +18,9 @@ import ResponsePanel from './ResponsePanel';
 import BodyEditor from './BodyEditor';
 import AuthEditor from './AuthEditor';
 import RequestBar from './RequestBar';
+import Sidebar from './Sidebar';
+import SaveModal from './SaveModal';
+import Toast from './Toast';
 
 const PRESENCE_COLORS = ['#a78bfa', '#34d399', '#f472b6', '#fb923c', '#60a5fa', '#fbbf24', '#f87171'];
 
@@ -84,6 +88,14 @@ export default function LiveSession({
   const [channelStatus, setChannelStatus] = useState('connecting');
   const [reconnectKey, setReconnectKey] = useState(0);
   const [forking, setForking] = useState(false);
+  // Host-only convenience: browse the host's own collections/history to load into the live request.
+  // Never shared with guests — sourced locally from the host's own session, same as the main Playground.
+  const [history, setHistory] = useState([]);
+  const [saved, setSaved] = useState([]);
+  const [sidebarLoading, setSidebarLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [renamingEntry, setRenamingEntry] = useState(null);
+  const { toasts, addToast } = useToast();
 
   const lastLocalRef = useRef(0);
   const syncTimerRef = useRef(null);
@@ -133,6 +145,33 @@ export default function LiveSession({
 
     setInitialized(true);
   }, [sessionId]);
+
+  // Host-only: load the host's own collections/history (decrypted locally, never sent to guests)
+  useEffect(() => {
+    if (!isHost) return;
+    const headers = { 'x-session-id': getSessionId() };
+    Promise.all([
+      fetch('/api/history', { headers }).then((r) => r.json()).then(async (data) => {
+        if (!Array.isArray(data)) return;
+        const rows = await Promise.all(data.map(async (row) => ({
+          id: row.id, method: row.method, url: row.url,
+          status: row.status, timestamp: row.timestamp,
+          state: await decryptState(row.state),
+        })));
+        setHistory(rows.filter((r) => r.state !== null));
+      }).catch(() => {}),
+      fetch('/api/saved', { headers }).then((r) => r.json()).then(async (data) => {
+        if (!Array.isArray(data)) return;
+        const rows = await Promise.all(data.map(async (row) => ({
+          id: row.id, name: row.name, slug: row.slug,
+          method: row.method, url: row.url,
+          state: await decryptState(row.state),
+          collection: row.collection ?? '', createdAt: row.created_at,
+        })));
+        setSaved(rows.filter((r) => r.state !== null));
+      }).catch(() => {}),
+    ]).finally(() => setSidebarLoading(false));
+  }, [isHost]);
 
   // Re-fetch state when tab becomes visible (catches missed realtime events)
   useEffect(() => {
@@ -269,9 +308,11 @@ export default function LiveSession({
     clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(async () => {
       try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (hostTokenRef.current) headers['x-host-token'] = hostTokenRef.current;
         await fetch(`/api/live/${sessionId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ state: newReq }),
         });
       } catch {}
@@ -343,9 +384,11 @@ export default function LiveSession({
       }
 
       lastLocalRef.current = Date.now();
+      const patchHeaders = { 'Content-Type': 'application/json' };
+      if (hostTokenRef.current) patchHeaders['x-host-token'] = hostTokenRef.current;
       await fetch(`/api/live/${sessionId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: patchHeaders,
         body: JSON.stringify({ response: data }),
       });
     } catch {
@@ -375,6 +418,140 @@ export default function LiveSession({
     } catch {
       setForking(false);
     }
+  }
+
+  // --- Host sidebar: browse own collections/history to load into the live request ---
+  function restoreSaved(entry) {
+    updateReq(() => ({ ...DEFAULT_STATE, ...entry.state }));
+    setActiveTab('headers');
+  }
+
+  function restoreHistory(entry) {
+    updateReq(() => ({ ...DEFAULT_STATE, ...entry.state }));
+    setActiveTab('headers');
+  }
+
+  async function deleteFromSaved(id) {
+    const idx = saved.findIndex((s) => s.id === id);
+    const entry = saved[idx];
+    if (!entry) return;
+    setSaved((prev) => prev.filter((s) => s.id !== id));
+    try {
+      const res = await fetch(`/api/saved/${id}`, { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+      if (!res.ok) throw new Error();
+      addToast('Deleted');
+    } catch {
+      setSaved((prev) => {
+        const next = [...prev];
+        next.splice(Math.min(idx, next.length), 0, entry);
+        return next;
+      });
+      addToast('Failed to delete', 'error');
+    }
+  }
+
+  async function clearAllSaved() {
+    setSaved([]);
+    try {
+      await fetch('/api/saved', { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+    } catch { addToast('Failed to clear saved', 'error'); }
+  }
+
+  async function deleteFromHistory(id) {
+    setHistory((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await fetch(`/api/history/${id}`, { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+    } catch {}
+  }
+
+  async function clearHostHistory() {
+    setHistory([]);
+    try {
+      await fetch('/api/history', { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+      addToast('History cleared');
+    } catch { addToast('Failed to clear history', 'error'); }
+  }
+
+  async function duplicateSaved(entry) {
+    const name = `Copy of ${entry.name}`;
+    const slug = nameToSlug(name);
+    const tempId = `temp-${crypto.randomUUID()}`;
+    setSaved((prev) => [{ ...entry, id: tempId, name, slug, createdAt: new Date().toISOString() }, ...prev]);
+    try {
+      const encState = await encryptState(entry.state);
+      const res = await fetch('/api/saved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: getSessionId(), entry: { name, slug, method: entry.method, url: entry.url, state: encState, collection: entry.collection ?? '' } }),
+      });
+      const row = await res.json();
+      if (!row.id) throw new Error();
+      setSaved((prev) => prev.map((s) => s.id === tempId
+        ? { id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
+        : s));
+      addToast(`Duplicated "${entry.name}"`);
+    } catch {
+      setSaved((prev) => prev.filter((s) => s.id !== tempId));
+      addToast('Failed to duplicate', 'error');
+    }
+  }
+
+  async function handleMoveToCollection(id, collection) {
+    const entry = saved.find((s) => s.id === id);
+    if (!entry) return;
+    try {
+      const res = await fetch(`/api/saved/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': getSessionId() },
+        body: JSON.stringify({ name: entry.name, slug: entry.slug, collection }),
+      });
+      const row = await res.json();
+      if (row.id) {
+        setSaved((prev) => prev.map((s) => s.id === id ? { ...s, collection } : s));
+        addToast(`Moved to "${collection}"`);
+      } else {
+        addToast(row.error ?? 'Failed to move', 'error');
+      }
+    } catch { addToast('Failed to move', 'error'); }
+  }
+
+  async function handleRenameCollection(oldName, newName) {
+    const ids = saved
+      .filter((s) => (s.collection || extractGroup(s.url)) === oldName)
+      .map((s) => s.id);
+    if (!ids.length) return;
+    try {
+      const res = await fetch('/api/saved/group', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': getSessionId() },
+        body: JSON.stringify({ ids, to: newName }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setSaved((prev) => prev.map((s) => ids.includes(s.id) ? { ...s, collection: newName } : s));
+        addToast(`Renamed to "${newName}"`);
+      } else {
+        addToast(data.error ?? 'Failed to rename', 'error');
+      }
+    } catch { addToast('Failed to rename', 'error'); }
+  }
+
+  async function handleRenameSaved(name) {
+    const entry = renamingEntry;
+    setRenamingEntry(null);
+    const slug = nameToSlug(name);
+    try {
+      const res = await fetch(`/api/saved/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': getSessionId() },
+        body: JSON.stringify({ name, slug }),
+      });
+      const row = await res.json();
+      if (row.id) {
+        setSaved((prev) => prev.map((s) => s.id === row.id ? { ...s, name: row.name, slug: row.slug } : s));
+        addToast(`Renamed to "${row.name}"`);
+      }
+    } catch { addToast('Failed to rename', 'error'); }
   }
 
   async function endSession() {
@@ -500,26 +677,51 @@ export default function LiveSession({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-6 gap-5">
-        <div className={!canEdit ? 'pointer-events-none select-none' : ''} onInput={canEdit ? sendTyping : undefined}>
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {isHost && (
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed((v) => !v)}
+            saved={saved}
+            history={history}
+            activeRequestId={null}
+            onRestoreSaved={restoreSaved}
+            onDeleteSaved={deleteFromSaved}
+            onClearAllSaved={clearAllSaved}
+            onRenameSaved={setRenamingEntry}
+            onCopyLink={(entry) => { navigator.clipboard.writeText(`${window.location.origin}/p/${entry.slug}`); addToast('Link copied'); }}
+            onDuplicate={duplicateSaved}
+            onMoveToCollection={handleMoveToCollection}
+            onRenameCollection={handleRenameCollection}
+            onRestoreHistory={restoreHistory}
+            onDeleteHistory={deleteFromHistory}
+            onClearHistory={clearHostHistory}
+            mobileOpen={false}
+            loading={sidebarLoading}
+          />
+        )}
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-6 gap-5 overflow-y-auto">
+        <div onInput={canEdit ? sendTyping : undefined}>
           {!canEdit && (
             <div className="mb-2 text-center">
               <span className="text-xs text-gray-600">View only — only the host can edit in demo mode</span>
             </div>
           )}
-          <RequestBar
-            method={req.method}
-            url={req.url}
-            onMethodChange={(method) => {
-              updateReq((r) => ({ ...r, method }));
-              if (['GET', 'HEAD'].includes(method) && activeTab === 'body') changeTab('headers');
-            }}
-            onUrlChange={(url) => updateReq((r) => ({ ...r, url }))}
-            onSend={sendRequest}
-            isLoading={isLoading}
-            jsonInvalid={jsonInvalid}
-            isMac={isMac}
-          />
+          <div className={!canEdit ? 'pointer-events-none select-none' : ''}>
+            <RequestBar
+              method={req.method}
+              url={req.url}
+              onMethodChange={(method) => {
+                updateReq((r) => ({ ...r, method }));
+                if (['GET', 'HEAD'].includes(method) && activeTab === 'body') changeTab('headers');
+              }}
+              onUrlChange={(url) => updateReq((r) => ({ ...r, url }))}
+              onSend={sendRequest}
+              isLoading={isLoading}
+              jsonInvalid={jsonInvalid}
+              isMac={isMac}
+            />
+          </div>
 
           <div className="border border-gray-800 rounded-lg overflow-hidden mt-5">
             {viewers.some((v) => v.id !== myId && v.isTyping) && (
@@ -531,32 +733,32 @@ export default function LiveSession({
               </div>
             )}
             <div className="flex border-b border-gray-800 bg-gray-900/50">
-              <TabButton id="params" activeTab={activeTab} onClick={() => changeTab('params')} viewers={viewers} myId={myId}>
+              <LiveTabButton id="params" activeTab={activeTab} onClick={() => changeTab('params')} viewers={viewers} myId={myId}>
                 Params
                 {req.url?.includes('?') && (
                   <span className="ml-1.5 text-xs text-gray-500">({req.url.split('?')[1].split('&').filter(Boolean).length})</span>
                 )}
-              </TabButton>
-              <TabButton id="headers" activeTab={activeTab} onClick={() => changeTab('headers')} viewers={viewers} myId={myId}>
+              </LiveTabButton>
+              <LiveTabButton id="headers" activeTab={activeTab} onClick={() => changeTab('headers')} viewers={viewers} myId={myId}>
                 Headers
                 {(req.headers?.length ?? 0) > 0 && <span className="ml-1.5 text-xs text-gray-500">({req.headers.length})</span>}
-              </TabButton>
-              <TabButton id="auth" activeTab={activeTab} onClick={() => changeTab('auth')} viewers={viewers} myId={myId}>
+              </LiveTabButton>
+              <LiveTabButton id="auth" activeTab={activeTab} onClick={() => changeTab('auth')} viewers={viewers} myId={myId}>
                 Auth
                 {req.auth?.type !== 'none' && <span className="ml-1.5 text-xs text-indigo-400">●</span>}
-              </TabButton>
+              </LiveTabButton>
               {showBody && (
-                <TabButton id="body" activeTab={activeTab} onClick={() => changeTab('body')} viewers={viewers} myId={myId}>
+                <LiveTabButton id="body" activeTab={activeTab} onClick={() => changeTab('body')} viewers={viewers} myId={myId}>
                   Body
                   {req.bodyType !== 'none' && (
                     <span className={`ml-1.5 text-xs ${jsonInvalid ? 'text-red-400' : 'text-gray-500'}`}>
                       {jsonInvalid ? '!' : `(${req.bodyType})`}
                     </span>
                   )}
-                </TabButton>
+                </LiveTabButton>
               )}
             </div>
-            <div className="p-4">
+            <div className={`p-4 ${!canEdit ? 'pointer-events-none select-none' : ''}`}>
               {activeTab === 'params' && <ParamsEditor url={req.url} onChange={(url) => updateReq((r) => ({ ...r, url }))} />}
               {activeTab === 'headers' && <HeadersEditor headers={req.headers ?? []} onChange={(headers) => updateReq((r) => ({ ...r, headers }))} />}
               {activeTab === 'auth' && <AuthEditor auth={req.auth} onChange={(auth) => updateReq((r) => ({ ...r, auth }))} />}
@@ -578,11 +780,8 @@ export default function LiveSession({
           </div>
         </div>
 
-        {/* Response panel — overlay blocks interaction in demo mode while keeping content visible/scrollable */}
+        {/* Response panel — always interactive; Raw/Copy/Download/search/expand are local-only, nothing here mutates shared state */}
         <div className="border border-gray-800 rounded-lg overflow-hidden relative">
-          {!canEdit && (
-            <div className="absolute inset-0 z-10 cursor-default" title="View only in demo mode" />
-          )}
           <div className="border-b border-gray-800 bg-gray-900/50 px-4 py-2.5">
             <span className="text-sm text-gray-500">Response</span>
           </div>
@@ -591,6 +790,12 @@ export default function LiveSession({
           </div>
         </div>
       </div>
+      </div>
+
+      {renamingEntry && (
+        <SaveModal title="Rename request" initialName={renamingEntry.name} onSave={handleRenameSaved} onCancel={() => setRenamingEntry(null)} />
+      )}
+      <Toast toasts={toasts} />
     </div>
   );
 }
