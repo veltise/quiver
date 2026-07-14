@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { dbErr } from '@/lib/db';
+import { dbErr, getClientIp, rateLimit, tooManyRequests } from '@/lib/db';
 
 function generateSessionId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -9,6 +9,7 @@ function generateSessionId() {
 }
 
 export async function POST(request) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   let body;
   try { body = await request.json(); }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }

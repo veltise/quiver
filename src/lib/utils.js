@@ -20,10 +20,53 @@ export function statusBadgeClass(status) {
 }
 
 export function methodColor(method) {
-  if (method === 'GET') return 'text-green-400';
-  if (method === 'POST') return 'text-yellow-400';
+  if (method === 'GET')    return 'text-green-400';
+  if (method === 'POST')   return 'text-yellow-400';
+  if (method === 'PUT')    return 'text-blue-400';
+  if (method === 'PATCH')  return 'text-violet-400';
   if (method === 'DELETE') return 'text-red-400';
-  return 'text-blue-400';
+  return 'text-gray-400';
+}
+
+export function methodBadgeClass(method) {
+  if (method === 'GET')    return 'bg-green-500/10 text-green-400 ring-1 ring-green-500/20';
+  if (method === 'POST')   return 'bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/20';
+  if (method === 'PUT')    return 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20';
+  if (method === 'PATCH')  return 'bg-violet-500/10 text-violet-400 ring-1 ring-violet-500/20';
+  if (method === 'DELETE') return 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20';
+  return 'bg-gray-500/10 text-gray-400 ring-1 ring-gray-500/20';
+}
+
+export function methodBgClass(method) {
+  if (method === 'GET')    return 'bg-green-500/10';
+  if (method === 'POST')   return 'bg-yellow-500/10';
+  if (method === 'PUT')    return 'bg-blue-500/10';
+  if (method === 'PATCH')  return 'bg-violet-500/10';
+  if (method === 'DELETE') return 'bg-red-500/10';
+  return 'bg-gray-500/10';
+}
+
+export function methodBorderClass(method) {
+  if (method === 'GET')    return 'border-l-green-500';
+  if (method === 'POST')   return 'border-l-yellow-500';
+  if (method === 'PUT')    return 'border-l-blue-500';
+  if (method === 'PATCH')  return 'border-l-violet-500';
+  if (method === 'DELETE') return 'border-l-red-500';
+  return 'border-l-gray-500';
+}
+
+export function statusColor(status) {
+  if (status >= 200 && status < 300) return 'text-green-400';
+  if (status >= 300 && status < 400) return 'text-yellow-400';
+  if (status >= 400 && status < 500) return 'text-orange-400';
+  return 'text-red-400';
+}
+
+// Response latency: green < 200ms, amber 200–1000ms, red > 1000ms
+export function latencyColor(ms) {
+  if (ms < 200) return 'text-green-400';
+  if (ms <= 1000) return 'text-yellow-400';
+  return 'text-red-400';
 }
 
 export function extractGroup(url) {
@@ -33,6 +76,27 @@ export function extractGroup(url) {
     const m = url.match(/^\{\{([^}]+)\}\}/);
     return m ? `{{${m[1]}}}` : 'Other';
   }
+}
+
+export function isJsonInvalid(bodyType, body) {
+  if (bodyType !== 'json' || !body?.trim()) return false;
+  try { JSON.parse(body); return false; } catch { return true; }
+}
+
+export function scoreAndFilterSaved(saved, query) {
+  if (!query) return [];
+  return saved.map((s) => {
+    const nameM = fuzzyScore(s.name, query);
+    const urlM = fuzzyScore(s.url, query);
+    const methodM = fuzzyScore(s.method, query);
+    return {
+      ...s,
+      matched: nameM.matched || urlM.matched || methodM.matched,
+      score: Math.max(nameM.score * 2, urlM.score, methodM.score * 3),
+      nameIndices: nameM.indices,
+      urlIndices: urlM.indices,
+    };
+  }).filter((s) => s.matched).sort((a, b) => b.score - a.score);
 }
 
 export function fuzzyScore(text, query) {

@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { nameToSlug, suggestName } from '@/lib/saved';
-import { dbErr } from '@/lib/db';
+import { dbErr, getClientIp, rateLimit, tooManyRequests, isValidSessionId } from '@/lib/db';
+
+const MAX_SHARES_PER_SESSION = 200;
 
 export async function POST(request) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
+
   const { sessionId, method, url, state } = await request.json();
-  if (!sessionId || !state) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  if (!isValidSessionId(sessionId) || !state) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+  if (url.length > 4096) return NextResponse.json({ error: 'URL too long' }, { status: 400 });
+  if (JSON.stringify(state).length > 100 * 1024) return NextResponse.json({ error: 'State too large' }, { status: 413 });
+
+  const supabase = createServerClient();
+  const { count } = await supabase
+    .from('saved_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('session_id', sessionId);
+  if (count >= MAX_SHARES_PER_SESSION) {
+    return NextResponse.json({ error: 'Share limit reached' }, { status: 429 });
+  }
 
   const safeState = {
     ...state,
@@ -15,7 +31,6 @@ export async function POST(request) {
 
   const name = suggestName(method, url) || method;
   const baseSlug = nameToSlug(name);
-  const supabase = createServerClient();
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 8)}`;

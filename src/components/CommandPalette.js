@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { methodColor, fuzzyScore } from '@/lib/utils';
+import { methodColor, fuzzyScore, scoreAndFilterSaved } from '@/lib/utils';
 import Hl from '@/components/Hl';
 
 export default function CommandPalette({ saved, envSets, activeEnvId, onClose, onRestoreRequest, onSwitchEnv, onClearHistory, onExport, onNewRequest }) {
@@ -11,17 +11,8 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
 
   const q = query.trim();
 
-  const savedItems = saved
-    .map((s) => {
-      const nameM = fuzzyScore(s.name, q);
-      const urlM = fuzzyScore(s.url, q);
-      const methodM = fuzzyScore(s.method, q);
-      const matched = nameM.matched || urlM.matched || methodM.matched;
-      const score = Math.max(nameM.score * 2, urlM.score, methodM.score * 3);
-      return { type: 'saved', key: s.id, data: s, matched, score, nameIndices: nameM.indices, urlIndices: urlM.indices };
-    })
-    .filter((x) => x.matched)
-    .sort((a, b) => b.score - a.score)
+  const savedItems = (q ? scoreAndFilterSaved(saved, q) : saved)
+    .map((s) => ({ type: 'saved', key: s.id, data: s, matched: true, score: s.score ?? 0, nameIndices: s.nameIndices ?? [], urlIndices: s.urlIndices ?? [] }))
     .slice(0, q ? Infinity : 8);
 
   const envItems = envSets

@@ -14,6 +14,19 @@ function pythonRepr(value, depth = 0) {
   return `{\n${entries.map(([k, v]) => `${inner}${JSON.stringify(k)}: ${pythonRepr(v, depth + 1)}`).join(',\n')}\n${pad}}`;
 }
 
+export async function readStreamBody(body, onProgress) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value, { stream: true });
+    onProgress?.(text);
+  }
+  return text + decoder.decode();
+}
+
 export function buildBody(req) {
   if (!req || ['GET', 'HEAD'].includes(req.method)) return null;
   const { bodyType, body, formFields, graphqlQuery, graphqlVariables } = req;

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Play, Square, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { buildEffectiveHeaders } from '@/lib/request';
+import { buildEffectiveHeaders, readStreamBody } from '@/lib/request';
 import { applyEnv } from '@/lib/env';
 import { methodColor } from '@/lib/utils';
 
@@ -90,13 +90,7 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
 
         if (res.headers.get('content-type')?.includes('text/event-stream')) {
           httpStatus = parseInt(res.headers.get('x-proxy-status') ?? '200');
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            decoder.decode(value, { stream: true });
-          }
+          await readStreamBody(res.body);
           time = Date.now() - start;
         } else {
           const data = await res.json();

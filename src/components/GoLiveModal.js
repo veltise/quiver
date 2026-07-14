@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
+import PulsingDot from './PulsingDot';
 
 function stripAuth(req) {
   return {
@@ -45,10 +46,7 @@ export default function GoLiveModal({ req, onCancel }) {
       <div className="fixed inset-0 bg-black/60 z-40" onClick={onCancel} />
       <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-6 w-96">
         <div className="flex items-center gap-2 mb-1">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-          </span>
+          <PulsingDot />
           <h2 className="text-sm font-semibold text-white">Start a live session</h2>
         </div>
         <p className="text-xs text-gray-500 mb-4">

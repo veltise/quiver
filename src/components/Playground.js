@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Keyboard, ChevronDown, Plus, X } from 'lucide-react';
+import { Keyboard, ChevronDown, Plus, X, Bookmark, Link2, SlidersHorizontal, List, Lock, FileText, Code2, Layers, Play, Terminal, Upload, FolderOpen, Download } from 'lucide-react';
 import { applyEnv } from '@/lib/env';
 import { parseCurl } from '@/lib/curl';
 import { nameToSlug, suggestName } from '@/lib/saved';
-import { buildEffectiveHeaders, buildBody, generateCurl } from '@/lib/request';
-import { extractGroup, methodColor, formatSize, statusBadgeClass } from '@/lib/utils';
+import { buildEffectiveHeaders, buildBody, generateCurl, readStreamBody } from '@/lib/request';
+import { extractGroup, methodColor, formatSize, statusBadgeClass, statusColor, latencyColor, isJsonInvalid } from '@/lib/utils';
 import { encryptState, decryptState } from '@/lib/crypto';
 import { useToast } from '@/hooks/useToast';
 import ParamsEditor from './ParamsEditor';
@@ -25,20 +25,12 @@ import CollectionRunner from './CollectionRunner';
 import CodeGenPanel from './CodeGenPanel';
 import Sidebar from './Sidebar';
 import ShortcutsModal from './ShortcutsModal';
-
-const ENV_SETS_KEY = 'api-playground-env-sets';
-const TIMEOUT_KEY = 'api-playground-timeout';
-const SESSION_KEY = 'api-playground-session';
-const SIDEBAR_KEY = 'api-playground-sidebar-collapsed';
+import PulsingDot from './PulsingDot';
+import { ENV_SETS_KEY, TIMEOUT_KEY, SIDEBAR_KEY } from '@/lib/constants';
+import { getSessionId } from '@/lib/session';
 const VALID_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
-const HDR_BTN = 'text-xs px-3 py-1.5 rounded border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors';
+const HDR_BTN = 'text-sm px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors font-medium';
 const MAX_TABS = 10;
-
-function getSessionId() {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) { id = crypto.randomUUID(); localStorage.setItem(SESSION_KEY, id); }
-  return id;
-}
 
 export const DEFAULT_STATE = {
   method: 'GET',
@@ -52,17 +44,32 @@ export const DEFAULT_STATE = {
   graphqlVariables: '{}',
 };
 
-function isJsonInvalid(bodyType, body) {
-  if (bodyType !== 'json' || !body.trim()) return false;
-  try { JSON.parse(body); return false; } catch { return true; }
+function hostPath(url) {
+  try {
+    const u = new URL(url);
+    return u.host + (u.pathname === '/' ? '' : u.pathname);
+  } catch { return url; }
 }
 
-function TabButton({ id, activeTab, onClick, children }) {
+// Tab text: custom name > saved name (minus a leading method dupe) > URL host+path
+function tabLabel(tab) {
+  if (tab.customName?.trim()) return tab.customName;
+  const name = tab.activeRequest?.name;
+  if (name) {
+    if (name.startsWith(`${tab.req.method} `)) return name.slice(tab.req.method.length + 1) || name;
+    return name;
+  }
+  const url = tab.req.url?.trim();
+  return url ? hostPath(url) : 'New request';
+}
+
+function TabButton({ id, activeTab, onClick, icon: Icon, children }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === id ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === id ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
     >
+      {Icon && <Icon size={11} />}
       {children}
     </button>
   );
@@ -90,7 +97,7 @@ export default function Playground({ initialState, isShared }) {
   const [envSets, setEnvSets] = useState([]);
   const [activeEnvId, setActiveEnvId] = useState(null);
   const [renamingEntry, setRenamingEntry] = useState(null);
-  const [requestTimeout, setRequestTimeout] = useState(30);
+  const [requestTimeout, setRequestTimeout] = useState(10);
   const [isMac, setIsMac] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [showBanner, setShowBanner] = useState(!!isShared);
@@ -99,6 +106,7 @@ export default function Playground({ initialState, isShared }) {
   const [showTools, setShowTools] = useState(false);
   const [mobileView, setMobileView] = useState('request');
   const [tabMenu, setTabMenu] = useState(null);
+  const [editingTab, setEditingTab] = useState(null); // { id, value }
   const splitRef = useRef(null);
   const toolsRef = useRef(null);
   const { toasts, addToast } = useToast();
@@ -161,15 +169,15 @@ export default function Playground({ initialState, isShared }) {
     });
   }
 
-  function openInTab(reqState, activeRequestState) {
+  function openInTab(reqState, activeRequestState, customName = null) {
     setTabState(prev => {
       const current = prev.tabs.find(t => t.id === prev.activeTabId);
       if (!current?.req.url?.trim() && !current?.activeRequest) {
-        return { ...prev, tabs: prev.tabs.map(t => t.id === prev.activeTabId ? { ...t, req: reqState, activeRequest: activeRequestState, response: null, panelTab: 'headers' } : t) };
+        return { ...prev, tabs: prev.tabs.map(t => t.id === prev.activeTabId ? { ...t, req: reqState, activeRequest: activeRequestState, customName, response: null, panelTab: 'headers' } : t) };
       }
       if (prev.tabs.length >= MAX_TABS) return prev;
       const id = crypto.randomUUID();
-      return { tabs: [...prev.tabs, { id, req: reqState, activeRequest: activeRequestState, response: null, isLoading: false, panelTab: 'headers' }], activeTabId: id };
+      return { tabs: [...prev.tabs, { id, req: reqState, activeRequest: activeRequestState, customName, response: null, isLoading: false, panelTab: 'headers' }], activeTabId: id };
     });
   }
 
@@ -226,6 +234,10 @@ export default function Playground({ initialState, isShared }) {
   }, []);
 
   useEffect(() => {
+    try { localStorage.setItem(TIMEOUT_KEY, String(requestTimeout)); } catch {}
+  }, [requestTimeout]);
+
+  useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(ENV_SETS_KEY));
       if (stored?.sets?.length) {
@@ -250,8 +262,8 @@ export default function Playground({ initialState, isShared }) {
       setActiveEnvId(defaultId);
     }
 
-    const t = parseInt(localStorage.getItem(TIMEOUT_KEY) ?? '30', 10);
-    if (!isNaN(t)) setRequestTimeout(t);
+    const t = parseInt(localStorage.getItem(TIMEOUT_KEY) ?? '10', 10);
+    if (!isNaN(t)) setRequestTimeout(Math.min(t, 10));
 
     const headers = { 'x-session-id': getSessionId() };
     Promise.all([
@@ -368,6 +380,13 @@ export default function Playground({ initialState, isShared }) {
     } catch { addToast('Failed to clear history', 'error'); }
   }
 
+  async function deleteFromHistory(id) {
+    setHistory(prev => prev.filter(e => e.id !== id));
+    try {
+      await fetch(`/api/history/${id}`, { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+    } catch {}
+  }
+
   // --- Request ---
   async function sendRequest() {
     if (!req.url?.trim() || jsonInvalid) return;
@@ -379,7 +398,7 @@ export default function Playground({ initialState, isShared }) {
         ...h,
         key: applyEnv(h.key, envVars),
         value: applyEnv(h.value, envVars),
-      }));
+      })).filter(h => h.key?.trim());
       const envReq = {
         ...capturedReq,
         body: applyEnv(capturedReq.body ?? '', envVars),
@@ -408,18 +427,12 @@ export default function Playground({ initialState, isShared }) {
         const time = parseInt(res.headers.get('x-proxy-time') ?? '0');
         let resHeaders = {};
         try { resHeaders = JSON.parse(atob(res.headers.get('x-proxy-headers') ?? 'e30=')); } catch {}
-        updateTab(tabId, { isLoading: false, response: { status, statusText, time, headers: resHeaders, body: '', streaming: true } });
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
+        updateTab(tabId, { isLoading: false, response: { status, statusText, time, headers: resHeaders, body: '', streaming: true }, respondedAt: Date.now() });
         let body = '';
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            body += decoder.decode(value, { stream: true });
-            setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.id === tabId ? { ...t, response: { ...t.response, body, streaming: true } } : t) }));
-          }
-          body += decoder.decode();
+          body = await readStreamBody(res.body, (accumulated) => {
+            setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.id === tabId ? { ...t, response: { ...t.response, body: accumulated, streaming: true } } : t) }));
+          });
         } catch {}
         setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.id === tabId ? { ...t, response: { ...t.response, body, streaming: false } } : t) }));
         saveToHistory({ id: crypto.randomUUID(), method: capturedReq.method, url: capturedReq.url, status, timestamp: Date.now(), state: capturedReq });
@@ -427,7 +440,7 @@ export default function Playground({ initialState, isShared }) {
       }
 
       const data = await res.json();
-      updateTab(tabId, { isLoading: false, response: data });
+      updateTab(tabId, { isLoading: false, response: data, respondedAt: Date.now() });
       if (window.innerWidth < 768) setMobileView('response');
       saveToHistory({ id: crypto.randomUUID(), method: capturedReq.method, url: capturedReq.url, status: data.status, timestamp: Date.now(), state: capturedReq });
     } catch {
@@ -524,11 +537,62 @@ export default function Playground({ initialState, isShared }) {
   }
 
   async function deleteFromSaved(id) {
+    const idx = saved.findIndex((s) => s.id === id);
+    const entry = saved[idx];
+    if (!entry) return;
     setSaved((prev) => prev.filter((s) => s.id !== id));
     try {
-      await fetch(`/api/saved/${id}`, { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+      const res = await fetch(`/api/saved/${id}`, { method: 'DELETE', headers: { 'x-session-id': getSessionId() } });
+      if (!res.ok) throw new Error();
       addToast('Deleted');
-    } catch { addToast('Failed to delete', 'error'); }
+    } catch {
+      // Rollback: reinsert at its old position
+      setSaved((prev) => {
+        const next = [...prev];
+        next.splice(Math.min(idx, next.length), 0, entry);
+        return next;
+      });
+      addToast('Failed to delete', 'error');
+    }
+  }
+
+  async function commitTabRename() {
+    const editing = editingTab;
+    setEditingTab(null);
+    if (!editing) return;
+    const value = editing.value.trim();
+    if (!value) return;
+    const tab = tabs.find(t => t.id === editing.id);
+    if (!tab || value === tabLabel(tab)) return;
+
+    const entry = tab.activeRequest ? saved.find(s => s.id === tab.activeRequest.id) : null;
+    if (!entry) {
+      // Unsaved tab: the label only exists locally
+      updateTab(editing.id, { customName: value });
+      return;
+    }
+
+    // Saved request: renaming the tab renames the request everywhere (sidebar included)
+    const prevName = entry.name;
+    const prevSlug = entry.slug;
+    setSaved(prev => prev.map(s => s.id === entry.id ? { ...s, name: value } : s));
+    setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.activeRequest?.id === entry.id
+      ? { ...t, activeRequest: { ...t.activeRequest, name: value }, customName: null } : t) }));
+    try {
+      const res = await fetch(`/api/saved/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': getSessionId() },
+        body: JSON.stringify({ name: value, slug: nameToSlug(value) }),
+      });
+      const row = await res.json();
+      if (!row.id) throw new Error();
+      setSaved(prev => prev.map(s => s.id === row.id ? { ...s, name: row.name, slug: row.slug } : s));
+    } catch {
+      setSaved(prev => prev.map(s => s.id === entry.id ? { ...s, name: prevName, slug: prevSlug } : s));
+      setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.activeRequest?.id === entry.id
+        ? { ...t, activeRequest: { ...t.activeRequest, name: prevName } } : t) }));
+      addToast('Failed to rename', 'error');
+    }
   }
 
   function handleMethodChange(method) {
@@ -571,19 +635,26 @@ export default function Playground({ initialState, isShared }) {
   async function duplicateSaved(entry) {
     const name = `Copy of ${entry.name}`;
     const slug = nameToSlug(name);
+    // Optimistic: show the copy immediately, swap in the server row on success
+    const tempId = `temp-${crypto.randomUUID()}`;
+    setSaved((prev) => [{ ...entry, id: tempId, name, slug, createdAt: new Date().toISOString() }, ...prev]);
     try {
       const encState = await encryptState(entry.state);
       const res = await fetch('/api/saved', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: getSessionId(), entry: { name, slug, method: entry.method, url: entry.url, state: encState } }),
+        body: JSON.stringify({ sessionId: getSessionId(), entry: { name, slug, method: entry.method, url: entry.url, state: encState, collection: entry.collection ?? '' } }),
       });
       const row = await res.json();
-      if (row.id) {
-        setSaved((prev) => [{ id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: row.state, createdAt: row.created_at }, ...prev]);
-        addToast(`Duplicated "${entry.name}"`);
-      }
-    } catch { addToast('Failed to duplicate', 'error'); }
+      if (!row.id) throw new Error();
+      setSaved((prev) => prev.map((s) => s.id === tempId
+        ? { id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
+        : s));
+      addToast(`Duplicated "${entry.name}"`);
+    } catch {
+      setSaved((prev) => prev.filter((s) => s.id !== tempId));
+      addToast('Failed to duplicate', 'error');
+    }
   }
 
   async function handleMoveToCollection(id, collection) {
@@ -795,10 +866,10 @@ export default function Playground({ initialState, isShared }) {
       )}
 
       {/* Header */}
-      <header className="border-b border-gray-800 px-4 py-3 flex items-center shrink-0 bg-gray-950">
+      <header className="noise border-b border-gray-800 px-4 py-3 flex items-center shrink-0 bg-gray-950">
         {/* Brand */}
         <div className="flex items-center shrink-0 mr-4">
-          <h1 className="text-base font-semibold tracking-wide whitespace-nowrap">Quiver</h1>
+          <h1 className="text-xl font-semibold tracking-wider whitespace-nowrap"><span className="text-indigo-400 [text-shadow:0_0_8px_theme(colors.indigo.400/60%),0_0_20px_theme(colors.indigo.500/30%)]">Q</span><span className="text-white">uiver</span></h1>
         </div>
 
         {/* Center: active request name (mobile only — desktop uses tab bar) */}
@@ -812,48 +883,49 @@ export default function Playground({ initialState, isShared }) {
         <div className="flex-1 hidden md:block" />
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-4">
+        <div className="flex items-center gap-1 md:gap-1.5 shrink-0 ml-4">
           <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-            className="text-xs px-3 py-1.5 rounded border border-indigo-500/40 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
-            Save
+            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-indigo-500/40 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
+            <Bookmark size={13} /><span className="hidden md:inline">Save</span>
           </button>
           <button suppressHydrationWarning onClick={copyShareLink} disabled={isSharing || !req.url?.trim()}
-            className="text-xs px-3 py-1.5 rounded border border-share/40 bg-share/10 hover:bg-share/20 hover:border-share text-share disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95">
-            {isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}
+            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-share/40 bg-share/10 hover:bg-share/20 hover:border-share text-share disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
+            <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
           </button>
           <button onClick={() => setActiveModal('live')}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all active:scale-95">
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-            </span>
-            Live
+            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all active:scale-95 font-medium">
+            <PulsingDot className="h-1.5 w-1.5 shrink-0" />
+            <span className="hidden md:inline">Live</span>
           </button>
           <div className="relative" ref={toolsRef}>
-            <button className={`${HDR_BTN} flex items-center gap-1.5`} onClick={() => setShowTools(v => !v)}>
-              Tools <ChevronDown size={10} className="text-gray-600" />
+            <button className={`${HDR_BTN} flex items-center gap-1.5 px-2 md:px-4`} onClick={() => setShowTools(v => !v)}>
+              <span className="hidden md:inline">Tools</span><ChevronDown size={10} className="text-gray-600" />
             </button>
             {showTools && (
               <div className="absolute right-0 top-full mt-1.5 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl py-1.5 z-20 w-52">
                 <button onClick={() => { setActiveModal('env'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${envVars.some(v => v.key) ? 'bg-indigo-400' : 'bg-gray-700'}`} />
+                  <Layers size={12} className={`shrink-0 ${envVars.some(v => v.key) ? 'text-indigo-400' : 'text-gray-600'}`} />
                   Environments
                 </button>
                 <button onClick={() => { setActiveModal('runner'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-700 shrink-0" />
+                  <Play size={12} className="shrink-0 text-gray-600" />
                   Collection Runner
                 </button>
-                <div className="mx-3 my-1.5 border-t border-gray-800" />
-                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                <div className="hidden md:block mx-3 my-1.5 border-t border-gray-800" />
+                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed items-center gap-2.5">
+                  <Terminal size={12} className="shrink-0 text-gray-600" />
                   Copy as cURL
                 </button>
-                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors items-center gap-2.5">
+                  <Download size={12} className="shrink-0 text-gray-600" />
                   Import cURL
                 </button>
-                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
+                  <Upload size={12} className="shrink-0 text-gray-600" />
                   Export workspace
                 </button>
-                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">
+                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
+                  <FolderOpen size={12} className="shrink-0 text-gray-600" />
                   Import workspace
                 </button>
               </div>
@@ -861,8 +933,8 @@ export default function Playground({ initialState, isShared }) {
           </div>
           <input ref={importFileRef} type="file" accept=".json" className="hidden"
             onChange={(e) => { if (e.target.files?.[0]) { importWorkspace(e.target.files[0]); e.target.value = ''; } }} />
-          <button onClick={() => setActiveModal('shortcuts')} title="Keyboard shortcuts (?)" className="text-gray-700 hover:text-gray-300 transition-all p-1.5 rounded-md hover:bg-gray-800 hover:scale-110">
-            <Keyboard size={14} />
+          <button onClick={() => setActiveModal('shortcuts')} title="Keyboard shortcuts (?)" className="hidden md:block text-gray-600 hover:text-gray-300 transition-colors p-1">
+            <Keyboard size={18} />
           </button>
         </div>
       </header>
@@ -884,6 +956,7 @@ export default function Playground({ initialState, isShared }) {
           onMoveToCollection={handleMoveToCollection}
           onRenameCollection={handleRenameCollection}
           onRestoreHistory={(entry) => { openInTab({ ...DEFAULT_STATE, ...entry.state }, null); setMobileView('request'); }}
+          onDeleteHistory={deleteFromHistory}
           onClearHistory={clearHistory}
           mobileOpen={mobileView === 'library'}
           loading={sidebarLoading}
@@ -895,23 +968,47 @@ export default function Playground({ initialState, isShared }) {
           {/* Tab bar (desktop only) */}
           <div className="hidden md:flex items-center border-b border-gray-800 bg-gray-950 overflow-x-auto shrink-0 min-h-0">
             {tabs.map(tab => {
-              const label = tab.activeRequest?.name ?? (tab.req.url?.trim() ? tab.req.url : 'New request');
               const isActive = tab.id === activeTabId;
+              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-gray-800 shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-t-2 ${isActive ? 'bg-gray-900 text-white border-t-indigo-500' : 'text-gray-500 hover:text-gray-400 hover:bg-gray-900/30 border-t-transparent'}`;
+              if (editingTab?.id === tab.id) {
+                return (
+                  <div key={tab.id} className={tabClasses}>
+                    <span className={`text-[9px] font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
+                    <input
+                      autoFocus
+                      aria-label="Tab name"
+                      value={editingTab.value}
+                      onChange={(e) => setEditingTab(prev => ({ ...prev, value: e.target.value }))}
+                      onFocus={(e) => e.target.select()}
+                      onBlur={commitTabRename}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') { e.preventDefault(); commitTabRename(); }
+                        if (e.key === 'Escape') setEditingTab(null);
+                      }}
+                      className="min-w-0 flex-1 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                );
+              }
               return (
                 <button
                   key={tab.id}
                   onClick={() => setTabState(prev => ({ ...prev, activeTabId: tab.id }))}
+                  onDoubleClick={() => setEditingTab({ id: tab.id, value: tabLabel(tab) })}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     setTabMenu({ tabId: tab.id, x: Math.min(e.clientX, window.innerWidth - 220), y: Math.min(e.clientY, window.innerHeight - 180) });
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-gray-800 shrink-0 min-w-[160px] max-w-[240px] group transition-colors ${isActive ? 'bg-gray-900/60 text-gray-200' : 'text-gray-500 hover:text-gray-400 hover:bg-gray-900/30'}`}
+                  title="Double-click to rename"
+                  className={tabClasses}
                 >
-                  <span className={`text-[10px] font-bold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
-                  <span className="truncate min-w-0 flex-1 text-left">{label}</span>
+                  <span className={`text-[9px] font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
+                  <span className="truncate min-w-0 flex-1 text-left">{tabLabel(tab)}</span>
                   <span
                     role="button"
                     tabIndex={-1}
+                    aria-label="Close tab"
                     onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
                     className="shrink-0 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-gray-300 transition-all leading-none"
                   >
@@ -934,7 +1031,7 @@ export default function Playground({ initialState, isShared }) {
 
           {/* Request panel */}
           <div
-            className={`flex-col p-4 gap-4 overflow-y-auto pb-16 md:pb-4 ${mobileView === 'request' ? 'flex' : 'hidden md:flex'}`}
+            className={`flex flex-col p-4 gap-4 overflow-y-auto pb-16 md:pb-4 bg-surface ${mobileView === 'request' ? 'flex' : 'hidden md:flex'}`}
             style={{ flex: splitPct, minWidth: 0 }}
           >
             <RequestBar
@@ -946,34 +1043,35 @@ export default function Playground({ initialState, isShared }) {
               isLoading={isLoading}
               jsonInvalid={jsonInvalid}
               isMac={isMac}
+              timeout={requestTimeout}
               onTimeoutChange={setRequestTimeout}
             />
 
-            <div className="rounded-lg overflow-hidden bg-gray-900">
-              <div className="flex items-center gap-0.5 px-1.5 py-1.5 border-b border-gray-800/50">
-                <TabButton id="params" activeTab={activeTab} onClick={() => setActiveTab('params')}>
+            <div className="flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden bg-gray-900">
+              <div className="flex items-center gap-0.5 px-1.5 py-1.5 border-b border-gray-800/50 shrink-0">
+                <TabButton id="params" activeTab={activeTab} onClick={() => setActiveTab('params')} icon={SlidersHorizontal}>
                   Params
-                  {req.url?.includes('?') && <span className="ml-1 text-xs text-gray-600">({req.url.split('?')[1].split('&').filter((p) => p).length})</span>}
+                  {req.url?.includes('?') && <span className="ml-0.5 text-gray-600">({req.url.split('?')[1].split('&').filter((p) => p).length})</span>}
                 </TabButton>
-                <TabButton id="headers" activeTab={activeTab} onClick={() => setActiveTab('headers')}>
+                <TabButton id="headers" activeTab={activeTab} onClick={() => setActiveTab('headers')} icon={List}>
                   Headers
-                  {req.headers.length > 0 && <span className="ml-1 text-xs text-gray-600">({req.headers.length})</span>}
+                  {req.headers.length > 0 && <span className="ml-0.5 text-gray-600">({req.headers.length})</span>}
                 </TabButton>
-                <TabButton id="auth" activeTab={activeTab} onClick={() => setActiveTab('auth')}>
+                <TabButton id="auth" activeTab={activeTab} onClick={() => setActiveTab('auth')} icon={Lock}>
                   Auth
-                  {req.auth?.type !== 'none' && <span className="ml-1 text-xs text-indigo-400">●</span>}
+                  {req.auth?.type !== 'none' && <span className="ml-0.5 text-indigo-400">●</span>}
                 </TabButton>
                 {showBody && (
-                  <TabButton id="body" activeTab={activeTab} onClick={() => setActiveTab('body')}>
+                  <TabButton id="body" activeTab={activeTab} onClick={() => setActiveTab('body')} icon={FileText}>
                     Body
-                    {req.bodyType !== 'none' && <span className={`ml-1 text-xs ${jsonInvalid ? 'text-red-400' : 'text-gray-600'}`}>{jsonInvalid ? '!' : `(${req.bodyType})`}</span>}
+                    {req.bodyType !== 'none' && <span className={`ml-0.5 ${jsonInvalid ? 'text-red-400' : 'text-gray-600'}`}>{jsonInvalid ? '!' : `(${req.bodyType})`}</span>}
                   </TabButton>
                 )}
                 {req.url?.trim() && (
-                  <TabButton id="code" activeTab={activeTab} onClick={() => setActiveTab('code')}>Code</TabButton>
+                  <TabButton id="code" activeTab={activeTab} onClick={() => setActiveTab('code')} icon={Code2}>Code</TabButton>
                 )}
               </div>
-              <div className="p-4">
+              <div className="p-3 flex-1 overflow-y-auto">
                 {activeTab === 'params' && <ParamsEditor url={req.url} onChange={(url) => setReq((r) => ({ ...r, url }))} />}
                 {activeTab === 'headers' && <HeadersEditor headers={req.headers} onChange={(headers) => setReq((r) => ({ ...r, headers }))} />}
                 {activeTab === 'auth' && <AuthEditor auth={req.auth} onChange={(auth) => setReq((r) => ({ ...r, auth }))} />}
@@ -994,6 +1092,22 @@ export default function Playground({ initialState, isShared }) {
                 )}
               </div>
             </div>
+
+            {/* Last response summary — mobile only; on desktop the response panel is already visible */}
+            {response && !response.error && !isLoading && (
+              <div className="shrink-0 px-1 text-xs text-gray-600 flex md:hidden items-center gap-1.5">
+                <span>Last response:</span>
+                <span className={statusColor(response.status)}>{response.status}</span>
+                <span className="text-gray-700 select-none">·</span>
+                <span className={latencyColor(response.time)}>{response.time}ms</span>
+                {activeTabData.respondedAt && (
+                  <>
+                    <span className="text-gray-700 select-none">·</span>
+                    <span>{new Date(activeTabData.respondedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Drag handle */}
@@ -1007,7 +1121,7 @@ export default function Playground({ initialState, isShared }) {
             className={`flex-col overflow-hidden bg-gray-950 border-l border-gray-800/60 ${mobileView === 'response' ? 'flex' : 'hidden md:flex'}`}
             style={{ flex: 100 - splitPct, minWidth: 0 }}
           >
-            <div className="border-b border-gray-800 px-4 py-2.5 shrink-0 flex items-center gap-3 bg-gray-900/40 min-h-[41px]">
+            <div className="border-b border-gray-800 px-4 py-2.5 shrink-0 flex items-center gap-2 bg-gray-900/60 min-h-[41px]">
               {response && !response.error && (
                 <>
                   {response.streaming && (
@@ -1027,12 +1141,14 @@ export default function Playground({ initialState, isShared }) {
                   >
                     {response.status} {response.statusText}
                   </a>
-                  <span className="text-xs text-gray-600">{response.time}ms</span>
-                  <span className="text-xs text-gray-600">{formatSize(response.body)}</span>
+                  <span className="text-gray-700 text-xs select-none">·</span>
+                  <span className={`text-xs tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
+                  <span className="text-gray-700 text-xs select-none">·</span>
+                  <span className="text-xs text-gray-400 tabular-nums">{formatSize(response.body)}</span>
                 </>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <ResponsePanel
                 response={response}
                 isLoading={isLoading}

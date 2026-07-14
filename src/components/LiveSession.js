@@ -3,28 +3,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { createBrowserClient } from '@/lib/supabase';
 import { applyEnv } from '@/lib/env';
-import { buildEffectiveHeaders } from '@/lib/request';
+import { buildEffectiveHeaders, buildBody, readStreamBody } from '@/lib/request';
 import { encryptState } from '@/lib/crypto';
 import { nameToSlug, suggestName } from '@/lib/saved';
-import { extractGroup } from '@/lib/utils';
+import { extractGroup, isJsonInvalid } from '@/lib/utils';
+import { ENV_SETS_KEY } from '@/lib/constants';
+import { getSessionId } from '@/lib/session';
 import { DEFAULT_STATE } from './Playground';
 import ParamsEditor from './ParamsEditor';
+import PulsingDot from './PulsingDot';
 import HeadersEditor from './HeadersEditor';
 import ResponsePanel from './ResponsePanel';
 import BodyEditor from './BodyEditor';
 import AuthEditor from './AuthEditor';
 import RequestBar from './RequestBar';
 
-const ENV_SETS_KEY = 'api-playground-env-sets';
-const SESSION_KEY = 'api-playground-session';
 const PRESENCE_COLORS = ['#a78bfa', '#34d399', '#f472b6', '#fb923c', '#60a5fa', '#fbbf24', '#f87171'];
 
-function isJsonInvalid(bodyType, body) {
-  if (bodyType !== 'json' || !body?.trim()) return false;
-  try { JSON.parse(body); return false; } catch { return true; }
-}
-
-function TabButton({ id, activeTab, onClick, viewers, myId, children }) {
+function LiveTabButton({ id, activeTab, onClick, viewers, myId, children }) {
   const others = viewers.filter((v) => v.id !== myId && v.activeTab === id);
   return (
     <button
@@ -41,15 +37,6 @@ function TabButton({ id, activeTab, onClick, viewers, myId, children }) {
         />
       ))}
     </button>
-  );
-}
-
-function PulsingDot() {
-  return (
-    <span className="relative flex h-2 w-2">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-    </span>
   );
 }
 
@@ -305,11 +292,23 @@ export default function LiveSession({
     setIsLoading(true);
     setResponse(null);
     try {
-      const effectiveHeaders = buildEffectiveHeaders(req).map((h) => ({
-        ...h,
-        key: applyEnv(h.key, envVars),
-        value: applyEnv(h.value, envVars),
-      }));
+      const effectiveHeaders = buildEffectiveHeaders(req)
+        .filter((h) => h.key?.trim())
+        .map((h) => ({
+          ...h,
+          key: applyEnv(h.key, envVars),
+          value: applyEnv(h.value, envVars),
+        }));
+      const envReq = {
+        ...req,
+        body: applyEnv(req.body ?? '', envVars),
+        graphqlQuery: applyEnv(req.graphqlQuery ?? '', envVars),
+        formFields: (req.formFields ?? []).map((f) => ({
+          ...f,
+          key: applyEnv(f.key, envVars),
+          value: applyEnv(f.value ?? '', envVars),
+        })),
+      };
       const res = await fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -317,17 +316,7 @@ export default function LiveSession({
           url: applyEnv(req.url, envVars),
           method: req.method,
           headers: effectiveHeaders,
-          body: showBody && req.bodyType !== 'none'
-            ? req.bodyType === 'form'
-              ? (req.formFields ?? []).filter((f) => f.key)
-                  .map((f) => `${encodeURIComponent(applyEnv(f.key, envVars))}=${encodeURIComponent(applyEnv(f.value, envVars))}`).join('&')
-              : req.bodyType === 'graphql'
-              ? JSON.stringify({
-                  query: applyEnv(req.graphqlQuery ?? '', envVars),
-                  variables: (() => { try { return JSON.parse(req.graphqlVariables ?? '{}'); } catch { return {}; } })(),
-                })
-              : applyEnv(req.body, envVars)
-            : undefined,
+          body: buildBody(envReq) ?? undefined,
         }),
       });
 
@@ -340,17 +329,11 @@ export default function LiveSession({
         try { resHeaders = JSON.parse(atob(res.headers.get('x-proxy-headers') ?? 'e30=')); } catch {}
         setIsLoading(false);
         setResponse({ status, statusText, time, headers: resHeaders, body: '', streaming: true });
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
         let body = '';
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            body += decoder.decode(value, { stream: true });
-            setResponse((prev) => ({ ...prev, body, streaming: true }));
-          }
-          body += decoder.decode();
+          body = await readStreamBody(res.body, (accumulated) => {
+            setResponse((prev) => ({ ...prev, body: accumulated, streaming: true }));
+          });
         } catch {}
         data = { status, statusText, time, headers: resHeaders, body };
         setResponse({ ...data, streaming: false });
@@ -376,11 +359,7 @@ export default function LiveSession({
     if (!req.url?.trim()) return;
     setForking(true);
     try {
-      let sessionId_ = localStorage.getItem(SESSION_KEY);
-      if (!sessionId_) {
-        sessionId_ = crypto.randomUUID();
-        localStorage.setItem(SESSION_KEY, sessionId_);
-      }
+      const sessionId_ = getSessionId();
       const name = suggestName(req.method, req.url ?? '') || `${req.method} request`;
       const slug = nameToSlug(name) + '-' + Math.random().toString(36).slice(2, 7);
       const encState = await encryptState(req);

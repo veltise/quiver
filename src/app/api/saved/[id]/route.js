@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { getSessionHeader, dbErr } from '@/lib/db';
+import { getSessionHeader, getClientIp, rateLimit, tooManyRequests, isValidSessionId, dbErr } from '@/lib/db';
 
 export async function PATCH(request, { params }) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const { id } = await params;
   const sessionId = getSessionHeader(request);
   const { name, slug, method, url, state, collection } = await request.json();
-  if (!sessionId || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  if (!isValidSessionId(sessionId) || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
   const fields = { name, slug };
   if (method !== undefined) fields.method = method;
@@ -32,9 +33,10 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const { id } = await params;
   const sessionId = getSessionHeader(request);
-  if (!sessionId) return NextResponse.json({ error: 'Missing session' }, { status: 400 });
+  if (!isValidSessionId(sessionId)) return NextResponse.json({ error: 'Missing session' }, { status: 400 });
 
   const supabase = createServerClient();
   const { error } = await supabase

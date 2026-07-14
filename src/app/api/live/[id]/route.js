@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { dbErr } from '@/lib/db';
+import { dbErr, getClientIp, rateLimit, tooManyRequests } from '@/lib/db';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -17,9 +17,13 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const { id } = await params;
-  let body;
-  try { body = await request.json(); }
+  let bodyText, body;
+  try { bodyText = await request.text(); }
+  catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }); }
+  if (bodyText.length > 512 * 1024) return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
+  try { body = JSON.parse(bodyText); }
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
   const fields = {};
@@ -31,8 +35,8 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
-  // Marking host as disconnected requires host token
-  if ('host_connected' in fields) {
+  // All host-side writes (state, response, host_connected) require a valid host token
+  if ('host_connected' in fields || 'state' in fields || 'response' in fields) {
     const hostToken = request.headers.get('x-host-token');
     if (!hostToken) return NextResponse.json({ error: 'Missing host token' }, { status: 401 });
     const supabase = createServerClient();
@@ -53,6 +57,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const { id } = await params;
   const hostToken = request.headers.get('x-host-token');
   if (!hostToken) return NextResponse.json({ error: 'Missing host token' }, { status: 401 });

@@ -3,12 +3,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   PanelLeftClose, PanelLeftOpen, FolderOpen, Clock,
-  ChevronRight, Trash2, MoreHorizontal, Pencil, Ban, Search,
+  ChevronRight, Trash2, MoreHorizontal, Pencil, Ban, Search, X, Check,
 } from 'lucide-react';
-import { methodColor, fuzzyScore, extractGroup } from '@/lib/utils';
+import { methodBadgeClass, methodBorderClass, fuzzyScore, extractGroup, scoreAndFilterSaved } from '@/lib/utils';
+import { SIDEBAR_TAB_KEY } from '@/lib/constants';
 import Hl from '@/components/Hl';
+import MiddleTruncate from '@/components/MiddleTruncate';
 
-const SIDEBAR_KEY = 'api-playground-sidebar-tab';
 const METHOD_ORDER = { GET: 0, POST: 1, PUT: 2, PATCH: 3, DELETE: 4 };
 
 function extractPath(url) {
@@ -82,6 +83,15 @@ function ContextMenu({ entry, allCollections, position, onClose, onOpen, onRenam
   );
 }
 
+function SkeletonRow({ children }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-800/40 animate-pulse">
+      <div className="w-8 h-2.5 bg-gray-800 rounded shrink-0" />
+      {children}
+    </div>
+  );
+}
+
 function GroupHeader({ name, count, collapsed, onToggle, onRename }) {
   const [renaming, setRenaming] = useState(false);
   const [value, setValue] = useState(name);
@@ -105,8 +115,8 @@ function GroupHeader({ name, count, collapsed, onToggle, onRename }) {
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setValue(name); setRenaming(false); } e.stopPropagation(); }}
           className="flex-1 min-w-0 bg-gray-800 border border-gray-600 rounded px-1.5 py-0.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500" />
       ) : (
-        <button onClick={onToggle} className="flex-1 min-w-0 text-left py-0.5" title={name}>
-          <span className="text-xs text-gray-600 font-mono truncate block">{name}</span>
+        <button onClick={onToggle} className="flex-1 min-w-0 text-left py-0.5">
+          <MiddleTruncate text={name} className="text-xs text-gray-600 font-mono" />
         </button>
       )}
       <span className="text-xs text-gray-700 mx-1 shrink-0">{count}</span>
@@ -126,23 +136,36 @@ export default function Sidebar({
   activeRequestId,
   onRestoreSaved, onDeleteSaved, onClearAllSaved, onRenameSaved,
   onCopyLink, onDuplicate, onMoveToCollection, onRenameCollection,
-  onRestoreHistory, onClearHistory,
+  onRestoreHistory, onDeleteHistory, onClearHistory,
   mobileOpen, loading,
 }) {
   const [activeTab, setActiveTab] = useState('collections');
   useEffect(() => {
-    try { const s = localStorage.getItem(SIDEBAR_KEY); if (s) setActiveTab(s); } catch {}
+    try { const s = localStorage.getItem(SIDEBAR_TAB_KEY); if (s) setActiveTab(s); } catch {}
   }, []);
   const [search, setSearch] = useState('');
   const [historySearch, setHistorySearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState(new Set());
   const [focusedId, setFocusedId] = useState(null);
   const [menu, setMenu] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const confirmTimerRef = useRef(null);
   const listRef = useRef(null);
+
+  function handleDeleteClick(id) {
+    clearTimeout(confirmTimerRef.current);
+    if (confirmDeleteId === id) {
+      setConfirmDeleteId(null);
+      onDeleteSaved(id);
+    } else {
+      setConfirmDeleteId(id);
+      confirmTimerRef.current = setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  }
 
   function setTab(tab) {
     setActiveTab(tab);
-    try { localStorage.setItem(SIDEBAR_KEY, tab); } catch {}
+    try { localStorage.setItem(SIDEBAR_TAB_KEY, tab); } catch {}
   }
 
   useEffect(() => {
@@ -179,17 +202,7 @@ export default function Sidebar({
     [saved]
   );
 
-  const filtered = useMemo(() => {
-    if (!search) return [];
-    return saved.map(s => {
-      const nameM = fuzzyScore(s.name, search);
-      const urlM = fuzzyScore(s.url, search);
-      const methodM = fuzzyScore(s.method, search);
-      const matched = nameM.matched || urlM.matched || methodM.matched;
-      const score = Math.max(nameM.score * 2, urlM.score, methodM.score * 3);
-      return { ...s, matched, score, nameHl: nameM.indices, urlHl: urlM.indices };
-    }).filter(s => s.matched).sort((a, b) => b.score - a.score);
-  }, [saved, search]);
+  const filtered = useMemo(() => scoreAndFilterSaved(saved, search), [saved, search]);
 
   const groups = useMemo(() => {
     const map = new Map();
@@ -237,33 +250,41 @@ export default function Sidebar({
     const path = extractPath(entry.url);
     return (
       <div key={entry.id} data-entry-id={entry.id}
-        className={`flex items-center gap-0.5 pl-1.5 pr-2 py-1.5 border-b border-gray-800/40 last:border-0 transition-colors group/row border-l-2 ${
-          isActive ? 'border-l-indigo-500 bg-indigo-500/10' :
+        className={`flex items-center gap-0.5 pl-3 pr-2 py-1.5 border-b border-gray-800/40 last:border-0 transition-colors group/row border-l-2 ${
+          isActive ? `${methodBorderClass(entry.method)} bg-gray-800/60` :
           focused ? 'border-l-transparent bg-gray-800/50' :
           'border-l-transparent hover:bg-gray-800/40'
         }`}
         onMouseEnter={() => setFocusedId(entry.id)}>
         <button onClick={() => { onRestoreSaved(entry); setSearch(''); setFocusedId(null); }} className="flex items-center gap-1.5 flex-1 text-left min-w-0">
-          <span className={`text-xs font-bold w-10 shrink-0 ${methodColor(entry.method)}`}>{entry.method}</span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${methodBadgeClass(entry.method)}`}>{entry.method}</span>
           <div className="flex flex-col min-w-0">
             <span className="text-xs text-gray-200 truncate">
-              {entry.nameHl ? <Hl text={entry.name} indices={entry.nameHl} /> : entry.name}
+              {entry.nameIndices ? <Hl text={entry.name} indices={entry.nameIndices} /> : entry.name}
             </span>
             {showUrl ? (
-              <span className="text-xs text-gray-500 truncate font-mono">
-                {entry.urlHl ? <Hl text={entry.url} indices={entry.urlHl} /> : entry.url}
-              </span>
+              entry.urlIndices?.length ? (
+                <span className="text-xs text-gray-500 truncate font-mono">
+                  <Hl text={entry.url} indices={entry.urlIndices} />
+                </span>
+              ) : (
+                <MiddleTruncate text={entry.url} className="text-xs text-gray-500 font-mono" />
+              )
             ) : path && path !== '/' ? (
-              <span className="text-xs text-gray-600 truncate font-mono">{path}</span>
+              <MiddleTruncate text={path} className="text-xs text-gray-600 font-mono" />
             ) : null}
           </div>
         </button>
-        <button onClick={e => { e.stopPropagation(); onDeleteSaved(entry.id); }} title="Delete"
-          className="opacity-0 group-hover/row:opacity-100 text-gray-600 hover:text-red-400 transition-all p-1 shrink-0 rounded">
-          <Trash2 size={11} />
+        <button onClick={e => { e.stopPropagation(); handleDeleteClick(entry.id); }}
+          title={confirmDeleteId === entry.id ? 'Click again to confirm' : 'Delete'}
+          aria-label={confirmDeleteId === entry.id ? `Confirm delete ${entry.name}` : `Delete ${entry.name}`}
+          className={`transition-all p-1 shrink-0 rounded ${confirmDeleteId === entry.id
+            ? 'opacity-100 text-red-400 bg-red-500/10'
+            : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-gray-600 hover:text-red-400'}`}>
+          {confirmDeleteId === entry.id ? <Check size={11} /> : <Trash2 size={11} />}
         </button>
-        <button onClick={e => openMenu(e, entry)} title="More"
-          className="opacity-0 group-hover/row:opacity-100 text-gray-500 hover:text-gray-200 transition-all p-1 shrink-0 rounded hover:bg-gray-700">
+        <button onClick={e => openMenu(e, entry)} title="More" aria-label={`More actions for ${entry.name}`}
+          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-gray-500 hover:text-gray-200 transition-all p-1 shrink-0 rounded hover:bg-gray-700">
           <MoreHorizontal size={12} />
         </button>
       </div>
@@ -307,7 +328,7 @@ export default function Sidebar({
       )}
 
       {/* Tab bar */}
-      <div className="flex items-center gap-0.5 px-1.5 py-1.5 border-b border-gray-800/50 shrink-0">
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-gray-800/50 shrink-0">
         <button
           onClick={() => setTab('collections')}
           className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors rounded-md ${activeTab === 'collections' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
@@ -352,13 +373,12 @@ export default function Sidebar({
           <div className="flex-1 overflow-y-auto" ref={listRef}>
             {loading ? (
               [0,1,2,3].map(i => (
-                <div key={i} className="flex items-center gap-2 px-2 py-2.5 border-b border-gray-800/40 animate-pulse">
-                  <div className="w-8 h-2.5 bg-gray-800 rounded shrink-0" />
+                <SkeletonRow key={i}>
                   <div className="flex flex-col gap-1.5 flex-1">
                     <div className="h-2.5 bg-gray-800 rounded w-3/4" />
                     <div className="h-2 bg-gray-800/50 rounded w-1/2" />
                   </div>
-                </div>
+                </SkeletonRow>
               ))
             ) : saved.length === 0 ? (
               <p className="text-xs text-gray-600 p-3">No saved requests yet</p>
@@ -405,27 +425,39 @@ export default function Sidebar({
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               [0,1,2,3].map(i => (
-                <div key={i} className="flex items-center gap-2 px-2 py-2.5 border-b border-gray-800/40 animate-pulse">
-                  <div className="w-8 h-2.5 bg-gray-800 rounded shrink-0" />
+                <SkeletonRow key={i}>
                   <div className="h-2.5 bg-gray-800 rounded flex-1" />
                   <div className="w-6 h-2.5 bg-gray-800 rounded shrink-0" />
-                </div>
+                </SkeletonRow>
               ))
             ) : history.length === 0 ? (
               <p className="text-xs text-gray-600 p-3">No history yet</p>
             ) : filteredHistory.length === 0 ? (
               <p className="text-xs text-gray-600 p-3">No matches</p>
             ) : filteredHistory.map(entry => (
-              <button key={entry.id} onClick={() => onRestoreHistory(entry)}
-                className="w-full flex items-center gap-2 px-2 py-2 border-b border-gray-800/40 last:border-0 hover:bg-gray-800/60 transition-colors text-left">
-                <span className={`text-xs font-bold w-10 shrink-0 ${methodColor(entry.method)}`}>{entry.method}</span>
-                <span className="text-xs text-gray-400 truncate flex-1 font-mono">
-                  {entry.urlHl?.length ? <Hl text={entry.url} indices={entry.urlHl} /> : entry.url}
-                </span>
-                {entry.status && (
-                  <span className={`text-xs shrink-0 ${entry.status < 300 ? 'text-green-400' : 'text-orange-400'}`}>{entry.status}</span>
-                )}
-              </button>
+              <div key={entry.id} className="flex items-center group/hrow border-b border-gray-800/40 last:border-0 hover:bg-gray-800/60 transition-colors">
+                <button onClick={() => onRestoreHistory(entry)}
+                  className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0 text-left">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${methodBadgeClass(entry.method)}`}>{entry.method}</span>
+                  {entry.urlHl?.length ? (
+                    <span className="text-xs text-gray-400 truncate flex-1 font-mono">
+                      <Hl text={entry.url} indices={entry.urlHl} />
+                    </span>
+                  ) : (
+                    <MiddleTruncate text={entry.url} className="text-xs text-gray-400 flex-1 font-mono" />
+                  )}
+                  {entry.status && (
+                    <span className={`text-xs shrink-0 ${entry.status < 300 ? 'text-green-400' : 'text-orange-400'}`}>{entry.status}</span>
+                  )}
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); onDeleteHistory?.(entry.id); }}
+                  title="Remove"
+                  className="opacity-0 group-hover/hrow:opacity-100 text-gray-600 hover:text-red-400 transition-all p-2 shrink-0"
+                >
+                  <X size={11} />
+                </button>
+              </div>
             ))}
           </div>
         </div>

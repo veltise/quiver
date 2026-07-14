@@ -5,9 +5,53 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Clickable JSON values in response body */
-[data-v] { cursor: pointer; }
-[data-v]:hover { opacity: 0.7; }
+/* Fade-up entrance animation */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.animate-fade-up {
+  animation: fade-up 160ms ease-out both;
+}
+
+/* Row unfold — for new header/param rows */
+@keyframes row-in {
+  from { opacity: 0; transform: scaleY(0.4); }
+  to   { opacity: 1; transform: scaleY(1);   }
+}
+.animate-row-in {
+  transform-origin: top;
+  animation: row-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Button press micro-interaction — applied globally, overridable */
+button:not([disabled]) {
+  transition: color 100ms, background-color 100ms, border-color 100ms, opacity 100ms, box-shadow 100ms, transform 80ms;
+}
+button:not([disabled]):active {
+  transform: scale(0.97);
+}
+
+
+/* Noise texture — applied directly as background-image so it's always behind content */
+.noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+}
+
+/* Custom scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(25% 0.02 264) transparent;
+}
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: oklch(25% 0.02 264);
+  border-radius: 99px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: oklch(38% 0.05 264);
+}
 
 @theme {
   /* Backgrounds */
