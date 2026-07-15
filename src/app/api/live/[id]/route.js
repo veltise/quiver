@@ -39,7 +39,7 @@ export async function PATCH(request, { params }) {
   const supabase = createServerClient();
   const { data: session } = await supabase
     .from('live_sessions')
-    .select('host_token, is_collaborative')
+    .select('host_token, is_collaborative, include_auth')
     .eq('id', id)
     .single();
   if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -54,6 +54,19 @@ export async function PATCH(request, { params }) {
     if (session.host_token !== hostToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
+  }
+
+  // The session's "share auth tokens" choice is made once at creation and must hold for
+  // its whole lifetime — strip auth server-side on every write so a later state sync
+  // (typed, pasted, or loaded from a saved request) can't silently leak tokens to guests.
+  if (fields.state && session.include_auth === false && typeof fields.state === 'object') {
+    fields.state = {
+      ...fields.state,
+      auth: { type: 'none' },
+      headers: (fields.state.headers ?? []).filter(
+        (h) => h?.key?.trim().toLowerCase() !== 'authorization'
+      ),
+    };
   }
 
   const { error } = await supabase.from('live_sessions').update(fields).eq('id', id);
