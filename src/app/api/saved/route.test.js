@@ -1,0 +1,106 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/lib/supabase', () => ({ createServerClient: vi.fn() }));
+vi.mock('@/lib/db', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    rateLimit: vi.fn(async () => true),
+    tooManyRequests: () => new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 }),
+  };
+});
+
+import { createServerClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/db';
+import { POST } from './route';
+
+const SESSION_ID = '123e4567-e89b-12d3-a456-426614174000';
+
+function makeMockClient({ existingCount = 0, insertResult } = {}) {
+  const captured = {};
+  function builder() {
+    let mode = null;
+    const b = {
+      select: vi.fn(() => { mode = 'count'; return b; }),
+      eq: vi.fn(() => b),
+      insert: vi.fn((row) => { mode = 'insert'; captured.insertedRow = row; return b; }),
+      single: vi.fn(async () => insertResult ?? { data: { id: 'new-id', ...captured.insertedRow }, error: null }),
+      then: (resolve, reject) => Promise.resolve({ count: existingCount }).then(resolve, reject),
+    };
+    return b;
+  }
+  return { client: { from: vi.fn(builder) }, captured };
+}
+
+function saveRequest(body) {
+  return new Request('http://x/api/saved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+const validEntry = { name: 'Get users', slug: 'get-users', url: 'https://x', state: { url: 'https://x' }, collection: '' };
+
+beforeEach(() => {
+  vi.mocked(rateLimit).mockResolvedValue(true);
+});
+
+describe('POST /api/saved — validation (rejected before any DB call)', () => {
+  it('rejects an invalid session id', async () => {
+    const res = await POST(saveRequest({ sessionId: 'not-a-uuid', entry: validEntry }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a missing/blank name', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, name: '  ' } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a name over 200 characters', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, name: 'a'.repeat(201) } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a url over 4096 characters', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, url: 'https://x/' + 'a'.repeat(4096) } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a slug with invalid characters', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, slug: 'not a valid slug!' } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a collection name over 100 characters', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, collection: 'a'.repeat(101) } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects an oversized state payload', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, state: { body: 'a'.repeat(200 * 1024) } } }));
+    expect(res.status).toBe(413);
+  });
+
+  it('rejects when the write rate limit is exceeded', async () => {
+    vi.mocked(rateLimit).mockResolvedValue(false);
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: validEntry }));
+    expect(res.status).toBe(429);
+  });
+});
+
+describe('POST /api/saved — limits and success path', () => {
+  it('rejects once the per-session saved-request limit (200) is reached', async () => {
+    const { client } = makeMockClient({ existingCount: 200 });
+    createServerClient.mockReturnValue(client);
+
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: validEntry }));
+    expect(res.status).toBe(429);
+  });
+
+  it('does not persist url/method as separate columns — only inside encrypted state', async () => {
+    const { client, captured } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    await POST(saveRequest({ sessionId: SESSION_ID, entry: validEntry }));
+    expect(captured.insertedRow).not.toHaveProperty('url');
+    expect(captured.insertedRow).not.toHaveProperty('method');
+    expect(captured.insertedRow.session_id).toBe(SESSION_ID);
+  });
+});

@@ -6,12 +6,10 @@ export async function PATCH(request, { params }) {
   if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const { id } = await params;
   const sessionId = getSessionHeader(request);
-  const { name, slug, method, url, state, collection } = await request.json();
+  const { name, slug, state, collection } = await request.json();
   if (!isValidSessionId(sessionId) || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
 
   const fields = { name, slug };
-  if (method !== undefined) fields.method = method;
-  if (url !== undefined) fields.url = url;
   if (state !== undefined) fields.state = state;
   if (collection !== undefined) fields.collection = collection;
 

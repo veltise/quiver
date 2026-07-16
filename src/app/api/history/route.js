@@ -41,8 +41,6 @@ export async function POST(request) {
 
   const { error } = await supabase.from('history').insert({
     session_id: sessionId,
-    method: entry.method,
-    url: entry.url,
     status: typeof entry.status === 'number' ? entry.status : null,
     timestamp: entry.timestamp,
     state: entry.state,

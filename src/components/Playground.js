@@ -269,21 +269,25 @@ export default function Playground({ initialState, isShared }) {
     Promise.all([
       fetch('/api/history', { headers }).then((r) => r.json()).then(async (data) => {
         if (!Array.isArray(data)) return;
-        const rows = await Promise.all(data.map(async (row) => ({
-          id: row.id, method: row.method, url: row.url,
-          status: row.status, timestamp: row.timestamp,
-          state: await decryptState(row.state),
-        })));
+        const rows = await Promise.all(data.map(async (row) => {
+          const state = await decryptState(row.state);
+          return {
+            id: row.id, method: state?.method, url: state?.url,
+            status: row.status, timestamp: row.timestamp, state,
+          };
+        }));
         setHistory(rows.filter((r) => r.state !== null));
       }).catch(() => {}),
       fetch('/api/saved', { headers }).then((r) => r.json()).then(async (data) => {
         if (!Array.isArray(data)) return;
-        const rows = await Promise.all(data.map(async (row) => ({
-          id: row.id, name: row.name, slug: row.slug,
-          method: row.method, url: row.url,
-          state: await decryptState(row.state),
-          collection: row.collection ?? '', createdAt: row.created_at,
-        })));
+        const rows = await Promise.all(data.map(async (row) => {
+          const state = await decryptState(row.state);
+          return {
+            id: row.id, name: row.name, slug: row.slug,
+            method: state?.method, url: state?.url, state,
+            collection: row.collection ?? '', createdAt: row.created_at,
+          };
+        }));
         setSaved(rows.filter((r) => r.state !== null));
       }).catch(() => {}),
     ]).finally(() => setSidebarLoading(false));
@@ -482,11 +486,11 @@ export default function Playground({ initialState, isShared }) {
         const res = await fetch(`/api/saved/${existing.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'x-session-id': getSessionId() },
-          body: JSON.stringify({ name, slug: existing.slug, method: req.method, url: req.url, state: encState }),
+          body: JSON.stringify({ name, slug: existing.slug, state: encState }),
         });
         const row = await res.json();
         if (row.id) {
-          setSaved((prev) => prev.map((s) => s.id === row.id ? { ...s, name: row.name, slug: row.slug, method: row.method, url: row.url, state: row.state } : s));
+          setSaved((prev) => prev.map((s) => s.id === row.id ? { ...s, name: row.name, slug: row.slug, method: req.method, url: req.url, state: req } : s));
           setActiveRequest({ id: row.id, name: row.name });
           addToast(`Updated "${row.name}"`);
           setShowBanner(false);
@@ -503,11 +507,11 @@ export default function Playground({ initialState, isShared }) {
       const res = await fetch('/api/saved', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: getSessionId(), entry: { name, slug, method: req.method, url: req.url, state: encState, collection: extractGroup(req.url) } }),
+        body: JSON.stringify({ sessionId: getSessionId(), entry: { name, slug, url: req.url, method: req.method, state: encState, collection: extractGroup(req.url) } }),
       });
       const row = await res.json();
       if (row.id) {
-        setSaved((prev) => [{ id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: row.state, collection: row.collection ?? '', createdAt: row.created_at }, ...prev]);
+        setSaved((prev) => [{ id: row.id, name: row.name, slug: row.slug, method: req.method, url: req.url, state: req, collection: row.collection ?? '', createdAt: row.created_at }, ...prev]);
         setActiveRequest({ id: row.id, name: row.name });
         addToast(`Saved "${row.name}"`);
         setShowBanner(false);
@@ -648,7 +652,7 @@ export default function Playground({ initialState, isShared }) {
       const row = await res.json();
       if (!row.id) throw new Error();
       setSaved((prev) => prev.map((s) => s.id === tempId
-        ? { id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
+        ? { id: row.id, name: row.name, slug: row.slug, method: entry.method, url: entry.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
         : s));
       addToast(`Duplicated "${entry.name}"`);
     } catch {
@@ -759,7 +763,7 @@ export default function Playground({ initialState, isShared }) {
         });
         const row = await res.json();
         if (row.id) {
-          setSaved((prev) => [...prev, { id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: row.state, collection: row.collection ?? '', createdAt: row.created_at }]);
+          setSaved((prev) => [...prev, { id: row.id, name: row.name, slug: row.slug, method, url, state: entry.state ?? {}, collection: row.collection ?? '', createdAt: row.created_at }]);
           count++;
         }
       } catch {}

@@ -47,7 +47,7 @@ export async function POST(request) {
     const slug = attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
     const { data, error } = await supabase
       .from('saved_requests')
-      .insert({ session_id: sessionId, name: entry.name, slug, method: entry.method, url: entry.url, state: entry.state, collection: entry.collection ?? '' })
+      .insert({ session_id: sessionId, name: entry.name, slug, state: entry.state, collection: entry.collection ?? '' })
       .select()
       .single();
 

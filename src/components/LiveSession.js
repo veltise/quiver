@@ -153,21 +153,25 @@ export default function LiveSession({
     Promise.all([
       fetch('/api/history', { headers }).then((r) => r.json()).then(async (data) => {
         if (!Array.isArray(data)) return;
-        const rows = await Promise.all(data.map(async (row) => ({
-          id: row.id, method: row.method, url: row.url,
-          status: row.status, timestamp: row.timestamp,
-          state: await decryptState(row.state),
-        })));
+        const rows = await Promise.all(data.map(async (row) => {
+          const state = await decryptState(row.state);
+          return {
+            id: row.id, method: state?.method, url: state?.url,
+            status: row.status, timestamp: row.timestamp, state,
+          };
+        }));
         setHistory(rows.filter((r) => r.state !== null));
       }).catch(() => {}),
       fetch('/api/saved', { headers }).then((r) => r.json()).then(async (data) => {
         if (!Array.isArray(data)) return;
-        const rows = await Promise.all(data.map(async (row) => ({
-          id: row.id, name: row.name, slug: row.slug,
-          method: row.method, url: row.url,
-          state: await decryptState(row.state),
-          collection: row.collection ?? '', createdAt: row.created_at,
-        })));
+        const rows = await Promise.all(data.map(async (row) => {
+          const state = await decryptState(row.state);
+          return {
+            id: row.id, name: row.name, slug: row.slug,
+            method: state?.method, url: state?.url, state,
+            collection: row.collection ?? '', createdAt: row.created_at,
+          };
+        }));
         setSaved(rows.filter((r) => r.state !== null));
       }).catch(() => {}),
     ]).finally(() => setSidebarLoading(false));
@@ -487,7 +491,7 @@ export default function LiveSession({
       const row = await res.json();
       if (!row.id) throw new Error();
       setSaved((prev) => prev.map((s) => s.id === tempId
-        ? { id: row.id, name: row.name, slug: row.slug, method: row.method, url: row.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
+        ? { id: row.id, name: row.name, slug: row.slug, method: entry.method, url: entry.url, state: entry.state, collection: row.collection ?? '', createdAt: row.created_at }
         : s));
       addToast(`Duplicated "${entry.name}"`);
     } catch {
