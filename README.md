@@ -19,6 +19,7 @@ Built with Next.js, Supabase, and Tailwind CSS.
 - [Supabase](https://supabase.com) — Postgres (saved requests, history, live sessions, rate limiting) + Realtime (live collaboration)
 - [Tailwind CSS](https://tailwindcss.com) v4
 - [Vitest](https://vitest.dev) — unit tests
+- [Sentry](https://sentry.io) — error monitoring (optional, see below)
 
 ## Getting started
 
@@ -56,6 +57,18 @@ IP_HASH_SALT=a-long-random-string
   ```bash
   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   ```
+
+### 3b. Error monitoring (optional)
+
+Set up via the Sentry Next.js wizard (`npx @sentry/wizard@latest -i nextjs`), which generates `sentry.server.config.js`, `sentry.edge.config.js`, `src/instrumentation.js`, and `src/instrumentation-client.js`. Only one env var is needed:
+
+```bash
+SENTRY_AUTH_TOKEN=your-sentry-auth-token
+```
+
+Used at build time to upload source maps — without it, production stack traces on Sentry show minified code instead of your actual source. **This has to be set in both places**: locally in `.env.local` (for local builds) *and* in Vercel's Environment Variables (for production builds, which happen on Vercel's servers, not yours) — it's easy to add it in only one and end up with unreadable stack traces from production.
+
+The DSN itself is hardcoded in `src/instrumentation-client.js`, not an env var — that's normal, DSNs aren't secret.
 
 ### 4. Run it
 
