@@ -79,6 +79,32 @@ describe('PATCH /api/saved/[id] — ownership scoping', () => {
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(400);
   });
+
+  it('rejects a state update that is not encrypted, when state is included', async () => {
+    const { client } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    const req = new Request('http://x', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID },
+      body: JSON.stringify({ name: 'Renamed', slug: 'renamed', state: { url: 'https://x' } }),
+    });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts a properly-encrypted state update', async () => {
+    const { client } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    const req = new Request('http://x', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID },
+      body: JSON.stringify({ name: 'Renamed', slug: 'renamed', state: { _enc: true, iv: 'i', data: 'd' } }),
+    });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('DELETE /api/saved/[id] — ownership scoping', () => {

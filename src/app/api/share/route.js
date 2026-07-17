@@ -36,7 +36,7 @@ export async function POST(request) {
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 8)}`;
     const { data, error } = await supabase
       .from('saved_requests')
-      .insert({ session_id: sessionId, name, slug, state: safeState })
+      .insert({ session_id: sessionId, name, slug, state: safeState, is_public: true })
       .select('slug')
       .single();
 

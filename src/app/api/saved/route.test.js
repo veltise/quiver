@@ -36,7 +36,7 @@ function saveRequest(body) {
   return new Request('http://x/api/saved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 }
 
-const validEntry = { name: 'Get users', slug: 'get-users', url: 'https://x', state: { url: 'https://x' }, collection: '' };
+const validEntry = { name: 'Get users', slug: 'get-users', url: 'https://x', state: { _enc: true, iv: 'test-iv', data: 'test-data' }, collection: '' };
 
 beforeEach(() => {
   vi.mocked(rateLimit).mockResolvedValue(true);
@@ -78,6 +78,16 @@ describe('POST /api/saved — validation (rejected before any DB call)', () => {
     expect(res.status).toBe(413);
   });
 
+  it('rejects plaintext (non-encrypted) state — a private save must never be storable as plaintext', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, state: { url: 'https://x', headers: [] } } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects state that only partially looks encrypted', async () => {
+    const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: { ...validEntry, state: { _enc: true } } })); // missing iv/data
+    expect(res.status).toBe(400);
+  });
+
   it('rejects when the write rate limit is exceeded', async () => {
     vi.mocked(rateLimit).mockResolvedValue(false);
     const res = await POST(saveRequest({ sessionId: SESSION_ID, entry: validEntry }));
@@ -102,5 +112,13 @@ describe('POST /api/saved — limits and success path', () => {
     expect(captured.insertedRow).not.toHaveProperty('url');
     expect(captured.insertedRow).not.toHaveProperty('method');
     expect(captured.insertedRow.session_id).toBe(SESSION_ID);
+  });
+
+  it('always inserts is_public: false — a private save is never reachable via /p/[slug]', async () => {
+    const { client, captured } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    await POST(saveRequest({ sessionId: SESSION_ID, entry: validEntry }));
+    expect(captured.insertedRow.is_public).toBe(false);
   });
 });

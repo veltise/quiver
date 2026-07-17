@@ -67,6 +67,7 @@ describe('POST /api/share — auth stripping', () => {
     expect(captured.insertedRow.state.auth).toEqual({ type: 'none' });
     expect(captured.insertedRow.state.headers.some((h) => h.key.toLowerCase() === 'authorization')).toBe(false);
     expect(captured.insertedRow.state.headers.some((h) => h.key === 'Accept')).toBe(true); // non-auth headers survive
+    expect(captured.insertedRow.is_public).toBe(true); // only /api/share writes should ever set this
   });
 
   it('strips the Authorization header case-insensitively', async () => {

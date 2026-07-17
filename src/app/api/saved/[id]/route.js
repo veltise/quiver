@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getSessionHeader, getClientIp, rateLimit, tooManyRequests, isValidSessionId, dbErr } from '@/lib/db';
+import { isEncryptedState } from '@/lib/crypto';
 
 export async function PATCH(request, { params }) {
   if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
@@ -8,6 +9,8 @@ export async function PATCH(request, { params }) {
   const sessionId = getSessionHeader(request);
   const { name, slug, state, collection } = await request.json();
   if (!isValidSessionId(sessionId) || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  // Same rule as POST /api/saved — a saved_requests row must never hold plaintext state.
+  if (state !== undefined && !isEncryptedState(state)) return NextResponse.json({ error: 'State must be encrypted' }, { status: 400 });
 
   const fields = { name, slug };
   if (state !== undefined) fields.state = state;

@@ -17,9 +17,14 @@
 
 -- ── saved_requests ──────────────────────────────────────────────────────────
 -- id, session_id, name, slug, created_at inferred (no tracked CREATE TABLE)
--- state:      client-encrypted (AES-GCM) JSON blob — headers/body/auth/etc.
+-- state:      client-encrypted (AES-GCM) JSON blob for private saves, plaintext
+--             (auth-stripped) for public shares — POST /api/saved rejects
+--             non-encrypted state, so a private row can never hold plaintext.
 -- url/method: intentionally NOT columns — dropped in 006, live only inside `state`
 -- collection: added in 001
+-- is_public:  added in 008 — true only for rows from POST /api/share. /p/[slug]
+--             and /api/p/[slug] both require this, so a private row is never
+--             servable by slug regardless of what's in `state`.
 create table if not exists saved_requests (
   id          uuid primary key default gen_random_uuid(),
   session_id  text not null,
@@ -27,6 +32,7 @@ create table if not exists saved_requests (
   slug        text not null unique,
   state       jsonb,
   collection  text not null default '',
+  is_public   boolean not null default false,
   created_at  timestamptz not null default now()
 );
 

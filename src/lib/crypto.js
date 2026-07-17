@@ -32,6 +32,13 @@ export async function encryptState(state) {
   };
 }
 
+// Shape-checks a state value without decrypting it — safe to call server-side (no
+// localStorage/crypto.subtle involved). Used to reject non-encrypted state on writes
+// that must never store plaintext, so a future bug can't silently save it unencrypted.
+export function isEncryptedState(state) {
+  return !!state && state._enc === true && typeof state.iv === 'string' && typeof state.data === 'string';
+}
+
 // Returns the original object for plaintext states (pre-encryption data, share-link states).
 export async function decryptState(state) {
   if (!state?._enc) return state;

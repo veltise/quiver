@@ -8,6 +8,7 @@ export async function GET(_req, { params }) {
     .from('saved_requests')
     .select('state')
     .eq('slug', slug)
+    .eq('is_public', true)
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });

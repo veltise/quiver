@@ -10,6 +10,7 @@ export default async function SharedPage({ params }) {
     .from('saved_requests')
     .select('state')
     .eq('slug', id)
+    .eq('is_public', true)
     .single();
 
   if (!data) {
