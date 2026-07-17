@@ -5,6 +5,10 @@ import dns from 'node:dns/promises';
 export function isBlockedIp(ip) {
   const h = ip.toLowerCase();
   if (h === '::1') return true; // IPv6 loopback
+  // '::' is the IPv6 unspecified address — the same class of risk as 0.0.0.0 (already
+  // blocked below via isBlockedUrl's literal check): on some systems, connecting to it
+  // as a destination silently resolves to loopback rather than being rejected.
+  if (h === '::') return true;
   // fe80::/10 link-local — the /10 only fixes the first 10 bits, so the true range is
   // fe80:: through febf::, not just literal "fe80:" (a plain prefix match would miss fe90::, fea0::, etc).
   if (/^fe[89ab][0-9a-f]:/.test(h)) return true;

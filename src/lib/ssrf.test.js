@@ -29,6 +29,10 @@ describe('isBlockedIp', () => {
     expect(isBlockedIp('::1')).toBe(true);
   });
 
+  it('blocks the IPv6 unspecified address (::) — same risk class as 0.0.0.0', () => {
+    expect(isBlockedIp('::')).toBe(true);
+  });
+
   it('blocks link-local and the cloud metadata address', () => {
     expect(isBlockedIp('169.254.0.1')).toBe(true);
     expect(isBlockedIp('169.254.169.254')).toBe(true);
