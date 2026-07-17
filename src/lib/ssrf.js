@@ -9,9 +9,22 @@ export function isBlockedIp(ip) {
   // fe80:: through febf::, not just literal "fe80:" (a plain prefix match would miss fe90::, fea0::, etc).
   if (/^fe[89ab][0-9a-f]:/.test(h)) return true;
 
-  // Unwrap ::ffff:x.x.x.x so private IPv4 checks apply
-  const v4mapped = h.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  const addr = v4mapped ? v4mapped[1] : h;
+  // Unwrap ::ffff:x.x.x.x (IPv4-mapped IPv6) so private IPv4 checks apply. Node's URL
+  // parser can serialize the embedded IPv4 as EITHER dotted-decimal (::ffff:127.0.0.1)
+  // OR as two raw hex groups (::ffff:7f00:1 — same address, WHATWG URL spec picks this
+  // form when the low 16 bits are small enough to look like a bare number). Both must be
+  // unwrapped or the hex-group form walks straight past every range check below,
+  // including the cloud metadata IP (::ffff:a9fe:a9fe === 169.254.169.254).
+  const v4mappedDotted = h.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  const v4mappedHex = h.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  let addr = h;
+  if (v4mappedDotted) {
+    addr = v4mappedDotted[1];
+  } else if (v4mappedHex) {
+    const hi = parseInt(v4mappedHex[1], 16);
+    const lo = parseInt(v4mappedHex[2], 16);
+    addr = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+  }
 
   const m = addr.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (m) {

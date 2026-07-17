@@ -49,11 +49,24 @@ describe('isBlockedIp', () => {
     expect(isBlockedIp('fec0::1')).toBe(false); // just outside the /10
   });
 
-  it('unwraps IPv6-mapped IPv4 addresses before checking', () => {
+  it('unwraps IPv6-mapped IPv4 addresses before checking (dotted-decimal form)', () => {
     expect(isBlockedIp('::ffff:10.0.0.1')).toBe(true);
     expect(isBlockedIp('::ffff:127.0.0.1')).toBe(true);
     expect(isBlockedIp('::ffff:169.254.169.254')).toBe(true);
     expect(isBlockedIp('::ffff:8.8.8.8')).toBe(false);
+  });
+
+  it('unwraps IPv6-mapped IPv4 addresses before checking (raw hex-group form)', () => {
+    // Node's URL parser can serialize an IPv4-mapped address as two raw hex groups
+    // instead of dotted-decimal (e.g. new URL('http://[::ffff:127.0.0.1]/').hostname
+    // comes back as '::ffff:7f00:1', not '::ffff:127.0.0.1') — both textual forms are
+    // the exact same address and both must be caught, or this is a live SSRF bypass.
+    expect(isBlockedIp('::ffff:7f00:1')).toBe(true);   // 127.0.0.1
+    expect(isBlockedIp('::ffff:a00:1')).toBe(true);    // 10.0.0.1
+    expect(isBlockedIp('::ffff:a9fe:a9fe')).toBe(true); // 169.254.169.254 (cloud metadata)
+    expect(isBlockedIp('::ffff:c0a8:1')).toBe(true);   // 192.168.0.1
+    expect(isBlockedIp('::ffff:ac10:1')).toBe(true);   // 172.16.0.1
+    expect(isBlockedIp('::ffff:808:808')).toBe(false); // 8.8.8.8 — public, must not block
   });
 
   it('allows ordinary public IPs', () => {
