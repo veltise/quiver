@@ -15,7 +15,7 @@ import { rateLimit } from '@/lib/db';
 import { POST } from './route';
 
 const SESSION_ID = '123e4567-e89b-12d3-a456-426614174000';
-const validEntry = { method: 'GET', url: 'https://x', status: 200, timestamp: Date.now(), state: { url: 'https://x' } };
+const validEntry = { method: 'GET', url: 'https://x', status: 200, timestamp: Date.now(), state: { _enc: true, iv: 'test-iv', data: 'test-data' } };
 
 function makeMockClient({ existingCount = 0 } = {}) {
   const captured = {};
@@ -58,6 +58,19 @@ describe('POST /api/history — validation', () => {
   it('rejects an oversized state payload', async () => {
     const res = await POST(historyRequest({ sessionId: SESSION_ID, entry: { ...validEntry, state: { body: 'a'.repeat(200 * 1024) } } }));
     expect(res.status).toBe(413);
+  });
+
+  it('rejects a state that is not encrypted — the client always encrypts before this route is called', async () => {
+    const res = await POST(historyRequest({ sessionId: SESSION_ID, entry: { ...validEntry, state: { url: 'https://x' } } }));
+    expect(res.status).toBe(400);
+  });
+
+  it('accepts a properly-encrypted state', async () => {
+    const { client } = makeMockClient({ existingCount: 0 });
+    createServerClient.mockReturnValue(client);
+
+    const res = await POST(historyRequest({ sessionId: SESSION_ID, entry: validEntry }));
+    expect(res.status).toBe(200);
   });
 });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getSessionHeader, getClientIp, rateLimit, tooManyRequests, isValidSessionId, dbErr } from '@/lib/db';
+import { isEncryptedState } from '@/lib/crypto';
 
 const MAX_HISTORY_PER_SESSION = 50;
 
@@ -30,6 +31,11 @@ export async function POST(request) {
   if (!VALID_METHODS.includes(entry.method)) return NextResponse.json({ error: 'Invalid method' }, { status: 400 });
   if (typeof entry.url !== 'string' || entry.url.length > 4096) return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   if (JSON.stringify(entry.state ?? {}).length > 100 * 1024) return NextResponse.json({ error: 'State too large' }, { status: 413 });
+  // The client always encrypts state before it ever reaches this route (see
+  // decryptState() in Playground.js/LiveSession.js, called unconditionally on every
+  // history row) — there is no legitimate plaintext-history path, so reject anything
+  // that isn't the encrypted shape rather than trusting that convention held.
+  if (!isEncryptedState(entry.state)) return NextResponse.json({ error: 'State must be encrypted' }, { status: 400 });
 
   const supabase = createServerClient();
 
