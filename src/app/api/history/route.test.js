@@ -12,19 +12,21 @@ vi.mock('@/lib/db', async (importOriginal) => {
 
 import { createServerClient } from '@/lib/supabase';
 import { rateLimit } from '@/lib/db';
-import { POST } from './route';
+import { POST, DELETE } from './route';
 
 const SESSION_ID = '123e4567-e89b-12d3-a456-426614174000';
 const validEntry = { method: 'GET', url: 'https://x', status: 200, timestamp: Date.now(), state: { _enc: true, iv: 'test-iv', data: 'test-data' } };
 
 function makeMockClient({ existingCount = 0 } = {}) {
-  const captured = {};
+  const captured = { eqCalls: [] };
   function builder() {
+    let mode = null;
     const b = {
       select: vi.fn(() => b),
-      eq: vi.fn(() => b),
+      eq: vi.fn((col, val) => { captured.eqCalls.push([col, val]); return b; }),
       insert: vi.fn((row) => { captured.insertedRow = row; return Promise.resolve({ error: null }); }),
-      then: (resolve, reject) => Promise.resolve({ count: existingCount }).then(resolve, reject),
+      delete: vi.fn(() => { mode = 'delete'; return b; }),
+      then: (resolve, reject) => Promise.resolve(mode === 'delete' ? { error: null } : { count: existingCount }).then(resolve, reject),
     };
     return b;
   }
@@ -33,6 +35,10 @@ function makeMockClient({ existingCount = 0 } = {}) {
 
 function historyRequest(body) {
   return new Request('http://x/api/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+function deleteRequest(sessionId) {
+  return new Request('http://x/api/history', { method: 'DELETE', headers: sessionId ? { 'x-session-id': sessionId } : {} });
 }
 
 beforeEach(() => {
@@ -91,5 +97,27 @@ describe('POST /api/history — limit enforcement', () => {
     expect(res.status).toBe(200);
     expect(captured.insertedRow.session_id).toBe(SESSION_ID);
     expect(captured.insertedRow).not.toHaveProperty('url'); // url/method live only inside encrypted state
+  });
+});
+
+describe('DELETE /api/history — wipes all history for a session', () => {
+  it('rejects when the write rate limit is exceeded', async () => {
+    vi.mocked(rateLimit).mockResolvedValue(false);
+    const res = await DELETE(deleteRequest(SESSION_ID));
+    expect(res.status).toBe(429);
+  });
+
+  it('rejects an invalid session id', async () => {
+    const res = await DELETE(deleteRequest('not-a-uuid'));
+    expect(res.status).toBe(400);
+  });
+
+  it('scopes the delete to session_id', async () => {
+    const { client, captured } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    const res = await DELETE(deleteRequest(SESSION_ID));
+    expect(res.status).toBe(200);
+    expect(captured.eqCalls).toContainEqual(['session_id', SESSION_ID]);
   });
 });

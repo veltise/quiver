@@ -64,8 +64,9 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
+  if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
   const sessionId = getSessionHeader(request);
-  if (!sessionId) return NextResponse.json({ error: 'Missing session' }, { status: 400 });
+  if (!isValidSessionId(sessionId)) return NextResponse.json({ error: 'Missing session' }, { status: 400 });
   const supabase = createServerClient();
   const { error } = await supabase.from('saved_requests').delete().eq('session_id', sessionId);
   if (error) return dbErr(error);
