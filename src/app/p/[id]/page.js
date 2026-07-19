@@ -11,6 +11,7 @@ export default async function SharedPage({ params }) {
     .select('state')
     .eq('slug', id)
     .eq('is_public', true)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .single();
 
   if (!data) {

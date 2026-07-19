@@ -9,6 +9,7 @@ export async function GET(_req, { params }) {
     .select('state')
     .eq('slug', slug)
     .eq('is_public', true)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });

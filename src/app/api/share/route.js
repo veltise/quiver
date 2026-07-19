@@ -31,12 +31,13 @@ export async function POST(request) {
 
   const name = suggestName(method, url) || method;
   const baseSlug = nameToSlug(name);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 8)}`;
     const { data, error } = await supabase
       .from('saved_requests')
-      .insert({ session_id: sessionId, name, slug, state: safeState, is_public: true })
+      .insert({ session_id: sessionId, name, slug, state: safeState, is_public: true, expires_at: expiresAt })
       .select('slug')
       .single();
 

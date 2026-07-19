@@ -25,6 +25,10 @@
 -- is_public:  added in 008 — true only for rows from POST /api/share. /p/[slug]
 --             and /api/p/[slug] both require this, so a private row is never
 --             servable by slug regardless of what's in `state`.
+-- expires_at: added in 009 — set only on share rows (30 days out at creation);
+--             null for private saves and for shares created before this
+--             migration, both of which mean "never expires". /p/[slug] and
+--             /api/p/[slug] treat null as non-expiring, not as unset/invalid.
 create table if not exists saved_requests (
   id          uuid primary key default gen_random_uuid(),
   session_id  text not null,
@@ -33,6 +37,7 @@ create table if not exists saved_requests (
   state       jsonb,
   collection  text not null default '',
   is_public   boolean not null default false,
+  expires_at  timestamptz,
   created_at  timestamptz not null default now()
 );
 

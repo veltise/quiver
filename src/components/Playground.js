@@ -21,6 +21,7 @@ import CurlImportModal from './CurlImportModal';
 import RequestBar from './RequestBar';
 import CommandPalette from './CommandPalette';
 import GoLiveModal from './GoLiveModal';
+import ShareWarningModal from './ShareWarningModal';
 import CollectionRunner from './CollectionRunner';
 import CodeGenPanel from './CodeGenPanel';
 import Sidebar from './Sidebar';
@@ -781,6 +782,13 @@ export default function Playground({ initialState, isShared }) {
       {renamingEntry && (
         <SaveModal title="Rename request" initialName={renamingEntry.name} onSave={handleRename} onCancel={() => setRenamingEntry(null)} />
       )}
+      {activeModal === 'share' && (
+        <ShareWarningModal
+          sharing={isSharing}
+          onCancel={() => setActiveModal(null)}
+          onConfirm={async () => { setActiveModal(null); await copyShareLink(); }}
+        />
+      )}
       {activeModal === 'curl' && (
         <CurlImportModal onImport={handleCurlImport} onCancel={() => setActiveModal(null)} />
       )}
@@ -892,7 +900,7 @@ export default function Playground({ initialState, isShared }) {
             className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-indigo-500/40 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
             <Bookmark size={13} /><span className="hidden md:inline">Save</span>
           </button>
-          <button suppressHydrationWarning onClick={copyShareLink} disabled={isSharing || !req.url?.trim()}
+          <button suppressHydrationWarning onClick={() => setActiveModal('share')} disabled={isSharing || !req.url?.trim()}
             className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-share/40 bg-share/10 hover:bg-share/20 hover:border-share text-share disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
             <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
           </button>
