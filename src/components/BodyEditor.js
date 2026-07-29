@@ -25,10 +25,10 @@ export default function BodyEditor({ bodyType, body, formFields, graphqlQuery, g
           <button
             key={t}
             onClick={() => emit({ bodyType: t })}
-            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+            className={`px-3 py-1 text-xs font-medium transition-colors ${
               bodyType === t
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+                ? 'bg-accent text-ink'
+                : 'bg-surface-raised text-muted hover:text-text'
             }`}
           >
             {t === 'form' ? 'form-data' : t === 'graphql' ? 'GraphQL' : t}
@@ -49,30 +49,30 @@ export default function BodyEditor({ bodyType, body, formFields, graphqlQuery, g
             <div className="flex justify-end">
               <button
                 onClick={() => { try { emit({ body: JSON.stringify(JSON.parse(body), null, 2) }); } catch {} }}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-xs text-muted hover:text-text transition-colors"
               >
                 Format
               </button>
             </div>
           )}
           <textarea
-            className={`w-full h-36 bg-gray-800 border rounded p-3 text-sm placeholder-gray-600 focus:outline-none resize-none font-mono ${
-              bodyError ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-gray-500'
+            className={`w-full h-36 bg-surface-raised border p-3 text-sm placeholder-dim focus:outline-none resize-none font-mono ${
+              bodyError ? 'border-error focus:border-error' : 'border-border focus:border-[rgba(242,237,228,.3)]'
             }`}
             placeholder={bodyType === 'json' ? '{"key": "value"}' : 'Request body'}
             value={body}
             onChange={(e) => emit({ body: e.target.value })}
           />
-          {bodyError && <p className="text-red-400 text-xs">{bodyError}</p>}
+          {bodyError && <p className="text-error text-xs">{bodyError}</p>}
         </div>
       )}
 
       {bodyType === 'graphql' && (
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-gray-500">Query</span>
+            <span className="text-xs text-muted">Query</span>
             <textarea
-              className="w-full h-40 bg-gray-800 border border-gray-700 rounded p-3 text-sm font-mono placeholder-gray-600 focus:outline-none focus:border-gray-500 resize-none"
+              className="w-full h-40 bg-surface-raised border border-border p-3 text-sm font-mono placeholder-dim focus:outline-none focus:border-[rgba(242,237,228,.3)] resize-none"
               placeholder={"query {\n  user(id: 1) {\n    name\n    email\n  }\n}"}
               value={graphqlQuery ?? ''}
               onChange={(e) => emit({ graphqlQuery: e.target.value })}
@@ -80,23 +80,23 @@ export default function BodyEditor({ bodyType, body, formFields, graphqlQuery, g
           </div>
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Variables</span>
+              <span className="text-xs text-muted">Variables</span>
               <button
                 onClick={() => { try { emit({ graphqlVariables: JSON.stringify(JSON.parse(graphqlVariables), null, 2) }); } catch {} }}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="text-xs text-muted hover:text-text transition-colors"
               >
                 Format
               </button>
             </div>
             <textarea
-              className={`w-full h-24 bg-gray-800 border rounded p-3 text-sm font-mono placeholder-gray-600 focus:outline-none resize-none ${
-                varsError ? 'border-red-500 focus:border-red-400' : 'border-gray-700 focus:border-gray-500'
+              className={`w-full h-24 bg-surface-raised border p-3 text-sm font-mono placeholder-dim focus:outline-none resize-none ${
+                varsError ? 'border-error focus:border-error' : 'border-border focus:border-[rgba(242,237,228,.3)]'
               }`}
               placeholder='{"id": "123"}'
               value={graphqlVariables ?? '{}'}
               onChange={(e) => emit({ graphqlVariables: e.target.value })}
             />
-            {varsError && <p className="text-red-400 text-xs">{varsError}</p>}
+            {varsError && <p className="text-error text-xs">{varsError}</p>}
           </div>
         </div>
       )}

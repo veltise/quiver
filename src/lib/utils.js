@@ -13,60 +13,52 @@ export function formatSize(body) {
 }
 
 export function statusBadgeClass(status) {
-  if (status >= 200 && status < 300) return 'bg-green-500/15 text-green-400 ring-1 ring-green-500/20';
-  if (status >= 300 && status < 400) return 'bg-yellow-500/15 text-yellow-400 ring-1 ring-yellow-500/20';
-  if (status >= 400 && status < 500) return 'bg-orange-500/15 text-orange-400 ring-1 ring-orange-500/20';
-  return 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20';
+  if (status >= 200 && status < 300) return 'bg-success/15 text-success ring-1 ring-success/20';
+  if (status >= 300 && status < 400) return 'bg-warning/15 text-warning ring-1 ring-warning/20';
+  if (status >= 400 && status < 500) return 'bg-warning/15 text-warning ring-1 ring-warning/20';
+  return 'bg-error/15 text-error ring-1 ring-error/20';
 }
 
 export function methodColor(method) {
-  if (method === 'GET')    return 'text-green-400';
-  if (method === 'POST')   return 'text-yellow-400';
-  if (method === 'PUT')    return 'text-blue-400';
-  if (method === 'PATCH')  return 'text-violet-400';
-  if (method === 'DELETE') return 'text-red-400';
-  return 'text-gray-400';
+  if (method === 'GET')    return 'text-success';
+  if (method === 'DELETE') return 'text-error';
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'text-accent';
+  return 'text-muted';
 }
 
 export function methodBadgeClass(method) {
-  if (method === 'GET')    return 'bg-green-500/10 text-green-400 ring-1 ring-green-500/20';
-  if (method === 'POST')   return 'bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/20';
-  if (method === 'PUT')    return 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20';
-  if (method === 'PATCH')  return 'bg-violet-500/10 text-violet-400 ring-1 ring-violet-500/20';
-  if (method === 'DELETE') return 'bg-red-500/10 text-red-400 ring-1 ring-red-500/20';
-  return 'bg-gray-500/10 text-gray-400 ring-1 ring-gray-500/20';
+  if (method === 'GET')    return 'bg-success/10 text-success ring-1 ring-success/20';
+  if (method === 'DELETE') return 'bg-error/10 text-error ring-1 ring-error/20';
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'bg-accent/10 text-accent ring-1 ring-accent/20';
+  return 'bg-[rgba(242,237,228,.06)] text-muted ring-1 ring-border';
 }
 
 export function methodBgClass(method) {
-  if (method === 'GET')    return 'bg-green-500/10';
-  if (method === 'POST')   return 'bg-yellow-500/10';
-  if (method === 'PUT')    return 'bg-blue-500/10';
-  if (method === 'PATCH')  return 'bg-violet-500/10';
-  if (method === 'DELETE') return 'bg-red-500/10';
-  return 'bg-gray-500/10';
+  if (method === 'GET')    return 'bg-success/10';
+  if (method === 'DELETE') return 'bg-error/10';
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'bg-accent/10';
+  return 'bg-[rgba(242,237,228,.06)]';
 }
 
 export function methodBorderClass(method) {
-  if (method === 'GET')    return 'border-l-green-500';
-  if (method === 'POST')   return 'border-l-yellow-500';
-  if (method === 'PUT')    return 'border-l-blue-500';
-  if (method === 'PATCH')  return 'border-l-violet-500';
-  if (method === 'DELETE') return 'border-l-red-500';
-  return 'border-l-gray-500';
+  if (method === 'GET')    return 'border-l-success';
+  if (method === 'DELETE') return 'border-l-error';
+  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'border-l-accent';
+  return 'border-l-border-strong';
 }
 
 export function statusColor(status) {
-  if (status >= 200 && status < 300) return 'text-green-400';
-  if (status >= 300 && status < 400) return 'text-yellow-400';
-  if (status >= 400 && status < 500) return 'text-orange-400';
-  return 'text-red-400';
+  if (status >= 200 && status < 300) return 'text-success';
+  if (status >= 300 && status < 400) return 'text-warning';
+  if (status >= 400 && status < 500) return 'text-warning';
+  return 'text-error';
 }
 
 // Response latency: green < 200ms, amber 200–1000ms, red > 1000ms
 export function latencyColor(ms) {
-  if (ms < 200) return 'text-green-400';
-  if (ms <= 1000) return 'text-yellow-400';
-  return 'text-red-400';
+  if (ms < 200) return 'text-success';
+  if (ms <= 1000) return 'text-warning';
+  return 'text-error';
 }
 
 export function extractGroup(url) {

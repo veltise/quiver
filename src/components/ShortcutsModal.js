@@ -39,26 +39,26 @@ export default function ShortcutsModal({ onClose, isMac }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-          <h2 className="text-sm font-semibold text-white">Keyboard Shortcuts</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors p-0.5 rounded">
+      <div className="relative bg-surface border border-border rounded-xl shadow-2xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-sm font-semibold text-text">Keyboard Shortcuts</h2>
+          <button onClick={onClose} className="text-muted hover:text-text transition-colors p-0.5 rounded">
             <X size={15} />
           </button>
         </div>
         <div className="p-5 flex flex-col gap-5">
           {sections.map((section) => (
             <div key={section.title}>
-              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">{section.title}</p>
+              <p className="text-xs font-medium text-dim uppercase tracking-wide mb-3">{section.title}</p>
               <div className="flex flex-col gap-2.5">
                 {section.items.map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">{item.label}</span>
+                    <span className="text-xs text-muted">{item.label}</span>
                     <div className="flex items-center gap-1">
                       {item.keys.map((k, i) => (
                         <span key={i} className="flex items-center gap-1">
-                          <kbd className="text-xs px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded font-sans text-gray-300">{k}</kbd>
-                          {i < item.keys.length - 1 && <span className="text-gray-700 text-xs">+</span>}
+                          <kbd className="text-xs px-1.5 py-0.5 bg-surface-raised border border-border rounded font-sans text-text">{k}</kbd>
+                          {i < item.keys.length - 1 && <span className="text-dim text-xs">+</span>}
                         </span>
                       ))}
                     </div>

@@ -75,13 +75,13 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-30 pt-24" onClick={onClose}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden"
+        className="bg-surface border border-border rounded-xl w-full max-w-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-gray-800 px-4 py-3">
+        <div className="border-b border-border px-4 py-3">
           <input
             autoFocus
-            className="w-full bg-transparent text-sm placeholder-gray-500 focus:outline-none"
+            className="w-full bg-transparent text-sm placeholder-dim focus:outline-none"
             placeholder="Search requests, environments, actions…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -90,10 +90,10 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
 
         <div className="max-h-96 overflow-y-auto">
           {allItems.length === 0 ? (
-            <p className="text-gray-500 text-sm p-4">No results</p>
+            <p className="text-muted text-sm p-4">No results</p>
           ) : sections.map((section) => (
             <div key={section.label}>
-              <div className="px-4 py-1.5 text-xs text-gray-600 uppercase tracking-wider bg-gray-950/50 sticky top-0">
+              <div className="px-4 py-1.5 text-xs text-dim uppercase tracking-wider bg-canvas sticky top-0">
                 {section.label}
               </div>
               {section.items.map((item) => {
@@ -104,7 +104,7 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
                     ref={active ? activeItemRef : null}
                     onClick={() => execute(item)}
                     className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-                      active ? 'bg-indigo-600/20 text-white' : 'text-gray-300 hover:bg-gray-800'
+                      active ? 'bg-accent/20 text-text' : 'text-text hover:bg-surface-raised'
                     }`}
                   >
                     {item.type === 'saved' && (
@@ -116,7 +116,7 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
                           <span className="text-sm truncate">
                             <Hl text={item.data.name} indices={item.nameIndices} />
                           </span>
-                          <span className={`text-xs truncate ${active ? 'text-gray-300' : 'text-gray-500'}`}>
+                          <span className={`text-xs truncate ${active ? 'text-text' : 'text-muted'}`}>
                             <Hl text={item.data.url} indices={item.urlIndices} />
                           </span>
                         </div>
@@ -124,20 +124,20 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
                     )}
                     {item.type === 'env' && (
                       <>
-                        <span className="text-xs text-gray-500 w-14 shrink-0">ENV</span>
+                        <span className="text-xs text-muted w-14 shrink-0">ENV</span>
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-sm truncate">
                             <Hl text={item.data.name} indices={item.nameIndices} />
                           </span>
                           {item.data.id === activeEnvId && (
-                            <span className="text-xs text-indigo-400 shrink-0">active</span>
+                            <span className="text-xs text-accent shrink-0">active</span>
                           )}
                         </div>
                       </>
                     )}
                     {item.type === 'action' && (
                       <>
-                        <span className="text-xs text-gray-500 w-14 shrink-0">⚡</span>
+                        <span className="text-xs text-muted w-14 shrink-0">⚡</span>
                         <span className="text-sm">
                           <Hl text={item.data.label} indices={item.nameIndices} />
                         </span>
@@ -150,7 +150,7 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
           ))}
         </div>
 
-        <div className="border-t border-gray-800 px-4 py-2 flex gap-4 text-xs text-gray-600">
+        <div className="border-t border-border px-4 py-2 flex gap-4 text-xs text-dim">
           <span>↑↓ navigate</span>
           <span>↵ select</span>
           <span>esc close</span>

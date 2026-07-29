@@ -30,7 +30,7 @@ import PulsingDot from './PulsingDot';
 import { ENV_SETS_KEY, TIMEOUT_KEY, SIDEBAR_KEY } from '@/lib/constants';
 import { getSessionId } from '@/lib/session';
 const VALID_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
-const HDR_BTN = 'text-sm px-4 py-2 rounded-lg border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors font-medium';
+const HDR_BTN = 'text-sm px-4 py-2 border border-[rgba(242,237,228,.14)] hover:border-[rgba(242,237,228,.4)] hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors font-medium';
 const MAX_TABS = 10;
 
 export const DEFAULT_STATE = {
@@ -65,12 +65,13 @@ function tabLabel(tab) {
 }
 
 function TabButton({ id, activeTab, onClick, icon: Icon, children }) {
+  // {Icon && <Icon size={11} />}  added before children if icon wanted
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === id ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+      className={`flex items-center gap-1.5 px-3 py-2.5 -mb-px text-sm border-b-2 transition-colors ${activeTab === id ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
     >
-      {Icon && <Icon size={11} />}
+      
       {children}
     </button>
   );
@@ -122,6 +123,13 @@ export default function Playground({ initialState, isShared }) {
   function setActiveRequest(val) { updateTab(activeTabId, { activeRequest: val }); }
 
   const envVars = useMemo(() => envSets.find((s) => s.id === activeEnvId)?.vars ?? [], [envSets, activeEnvId]);
+  // Header breadcrumb: the active request's collection, resolved from the saved list.
+  const breadcrumbCollection = useMemo(() => {
+    if (!activeRequest) return '';
+    const entry = saved.find((s) => s.id === activeRequest.id);
+    if (!entry) return '';
+    return entry.collection || extractGroup(entry.url ?? '');
+  }, [activeRequest, saved]);
   const showBody = !['GET', 'HEAD'].includes(req.method);
   const jsonInvalid = isJsonInvalid(req.bodyType, req.body);
 
@@ -362,12 +370,16 @@ export default function Playground({ initialState, isShared }) {
     setHistory((prev) => [entry, ...prev].slice(0, 20));
     try {
       const encState = await encryptState(entry.state);
-      await fetch('/api/history', {
+      const res = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: getSessionId(), entry: { ...entry, state: encState } }),
       });
-    } catch {}
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        addToast(data.error ?? 'Failed to log history', 'error');
+      }
+    } catch { addToast('Failed to log history', 'error'); }
   }
 
   async function clearAllSaved() {
@@ -394,7 +406,8 @@ export default function Playground({ initialState, isShared }) {
 
   // --- Request ---
   async function sendRequest() {
-    if (!req.url?.trim() || jsonInvalid) return;
+    if (!req.url?.trim()) return;
+    if (jsonInvalid) { addToast('Fix the invalid JSON body before sending', 'error'); return; }
     const tabId = activeTabId;
     const capturedReq = req;
     updateTab(tabId, { isLoading: true, response: null });
@@ -468,13 +481,15 @@ export default function Playground({ initialState, isShared }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: getSessionId(), method: req.method, url: req.url, state: shareState }),
       });
-      const { slug } = await res.json();
-      if (slug) {
-        await navigator.clipboard.writeText(`${window.location.origin}/p/${slug}`);
+      const data = await res.json();
+      if (data.slug) {
+        await navigator.clipboard.writeText(`${window.location.origin}/p/${data.slug}`);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+      } else {
+        addToast(data.error ?? 'Failed to share', 'error');
       }
-    } catch {} finally { setIsSharing(false); }
+    } catch { addToast('Failed to share', 'error'); } finally { setIsSharing(false); }
   }
 
   // --- Saved ---
@@ -773,11 +788,11 @@ export default function Playground({ initialState, isShared }) {
   }
 
   return (
-    <div className="flex flex-col bg-gray-950 text-gray-100 h-screen overflow-hidden">
+    <div className="flex flex-col bg-canvas text-text h-screen overflow-hidden">
       <Toast toasts={toasts} />
 
       {activeModal === 'save' && (
-        <SaveModal initialName={suggestName(req.method, req.url)} onSave={handleSave} onCancel={() => setActiveModal(null)} />
+        <SaveModal initialName={suggestName(req.url)} onSave={handleSave} onCancel={() => setActiveModal(null)} />
       )}
       {renamingEntry && (
         <SaveModal title="Rename request" initialName={renamingEntry.name} onSave={handleRename} onCancel={() => setRenamingEntry(null)} />
@@ -831,33 +846,33 @@ export default function Playground({ initialState, isShared }) {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setTabMenu(null)} onContextMenu={(e) => { e.preventDefault(); setTabMenu(null); }} />
           <div
-            className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 w-52 text-xs"
+            className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-52 text-xs"
             style={{ left: tabMenu.x, top: tabMenu.y }}
           >
             <button onClick={() => { duplicateTab(tabMenu.tabId); setTabMenu(null); }}
-              className="w-full text-left px-3 py-2 text-gray-300 hover:bg-gray-800 transition-colors">
+              className="w-full text-left px-3 py-2 text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">
               Duplicate tab
             </button>
-            <div className="border-t border-gray-800 my-1" />
+            <div className="border-t border-border my-1" />
             <button onClick={() => { closeTab(tabMenu.tabId); setTabMenu(null); }}
-              className="w-full text-left px-3 py-2 text-gray-300 hover:bg-gray-800 transition-colors">
+              className="w-full text-left px-3 py-2 text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">
               Close tab
             </button>
             {tabs.length > 1 && (
               <button onClick={() => { closeOtherTabs(tabMenu.tabId); setTabMenu(null); }}
-                className="w-full text-left px-3 py-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+                className="w-full text-left px-3 py-2 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">
                 Close other tabs
               </button>
             )}
             {tabs.findIndex(t => t.id === tabMenu.tabId) < tabs.length - 1 && (
               <button onClick={() => { closeTabsToRight(tabMenu.tabId); setTabMenu(null); }}
-                className="w-full text-left px-3 py-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+                className="w-full text-left px-3 py-2 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">
                 Close tabs to the right
               </button>
             )}
-            <div className="border-t border-gray-800 my-1" />
+            <div className="border-t border-border my-1" />
             <button onClick={() => { newTab(); setTabMenu(null); }}
-              className="w-full text-left px-3 py-2 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+              className="w-full text-left px-3 py-2 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">
               New tab
             </button>
           </div>
@@ -865,79 +880,86 @@ export default function Playground({ initialState, isShared }) {
       )}
 
       {showBanner && (
-        <div className="border-b border-indigo-500/20 bg-indigo-500/5 px-6 py-2.5 flex items-center justify-between shrink-0">
-          <span className="text-xs text-indigo-300">You're viewing a shared request</span>
+        <div className="border-b border-accent/20 bg-accent/5 px-6 py-2.5 flex items-center justify-between shrink-0">
+          <span className="text-xs text-accent">You're viewing a shared request</span>
           <div className="flex items-center gap-3">
             <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-              className="text-xs px-3 py-1 rounded border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              className="text-xs px-3 py-1 border border-accent/40 text-accent hover:bg-accent/10 hover:border-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
               Save to my workspace
             </button>
-            <button onClick={() => setShowBanner(false)} className="text-indigo-400/50 hover:text-indigo-300 transition-colors">×</button>
+            <button onClick={() => setShowBanner(false)} className="text-accent/50 hover:text-accent transition-colors">×</button>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <header className="noise border-b border-gray-800 px-4 py-3 flex items-center shrink-0 bg-gray-950">
-        {/* Brand */}
-        <div className="flex items-center shrink-0 mr-4">
-          <h1 className="text-xl font-semibold tracking-wider whitespace-nowrap"><span className="text-indigo-400 [text-shadow:0_0_8px_theme(colors.indigo.400/60%),0_0_20px_theme(colors.indigo.500/30%)]">Q</span><span className="text-white">uiver</span></h1>
-        </div>
-
-        {/* Center: active request name (mobile only — desktop uses tab bar) */}
-        <div className="flex-1 flex md:hidden items-center justify-center min-w-0 px-2">
+      <header className="noise border-b border-border px-4 py-3 flex items-center shrink-0 bg-surface">
+        {/* Brand + breadcrumb */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-4">
+          <div className="chamfer w-6 h-6 bg-accent shrink-0" />
+          <h1 className="text-base font-bold tracking-[-0.01em] whitespace-nowrap text-text shrink-0">Quiver</h1>
           {activeRequest && (
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs text-gray-400 truncate max-w-xs">{activeRequest.name}</span>
-            </div>
+            <>
+              <span className="hidden md:block w-px h-4 bg-border shrink-0" />
+              <span className="hidden md:block text-[13px] text-dim truncate min-w-0">
+                {breadcrumbCollection && <>{breadcrumbCollection} <span className="opacity-50">/</span> </>}
+                <span className="text-muted">{activeRequest.name}</span>
+              </span>
+            </>
           )}
         </div>
-        <div className="flex-1 hidden md:block" />
+
+        {/* Center: active request name (mobile only — desktop uses the breadcrumb above) */}
+        <div className="flex md:hidden items-center justify-center min-w-0 px-2">
+          {activeRequest && (
+            <span className="text-xs text-muted truncate max-w-[10rem]">{activeRequest.name}</span>
+          )}
+        </div>
 
         {/* Right: actions */}
         <div className="flex items-center gap-1 md:gap-1.5 shrink-0 ml-4">
           <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-indigo-500/40 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
+            className="chamfer-sm flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-semibold">
             <Bookmark size={13} /><span className="hidden md:inline">Save</span>
           </button>
           <button suppressHydrationWarning onClick={() => setActiveModal('share')} disabled={isSharing || !req.url?.trim()}
-            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-share/40 bg-share/10 hover:bg-share/20 hover:border-share text-share disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-medium">
+            className={`${HDR_BTN} flex items-center gap-1.5 px-2 md:px-4`}>
             <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
           </button>
           <button onClick={() => setActiveModal('live')}
-            className="flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all active:scale-95 font-medium">
+            className="flex items-center gap-1.5 text-xs px-2 py-2 text-error hover:brightness-110 transition-all active:scale-95 font-semibold">
             <PulsingDot className="h-1.5 w-1.5 shrink-0" />
             <span className="hidden md:inline">Live</span>
           </button>
           <div className="relative" ref={toolsRef}>
-            <button className={`${HDR_BTN} flex items-center gap-1.5 px-2 md:px-4`} onClick={() => setShowTools(v => !v)}>
-              <span className="hidden md:inline">Tools</span><ChevronDown size={10} className="text-gray-600" />
+            <button className="flex items-center gap-1 text-[13px] px-2 py-2 text-muted hover:text-text transition-colors" onClick={() => setShowTools(v => !v)}>
+              <span className="hidden md:inline">Tools</span><ChevronDown size={10} />
             </button>
             {showTools && (
-              <div className="absolute right-0 top-full mt-1.5 bg-gray-900 border border-gray-800 rounded-xl shadow-2xl py-1.5 z-20 w-52">
-                <button onClick={() => { setActiveModal('env'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <Layers size={12} className={`shrink-0 ${envVars.some(v => v.key) ? 'text-indigo-400' : 'text-gray-600'}`} />
+              <div className="absolute right-0 top-full mt-1.5 bg-surface-raised border border-border shadow-2xl py-1.5 z-20 w-52">
+                <button onClick={() => { setActiveModal('env'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                  <Layers size={12} className={`shrink-0 ${envVars.some(v => v.key) ? 'text-accent' : 'text-dim'}`} />
                   Environments
                 </button>
-                <button onClick={() => { setActiveModal('runner'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <Play size={12} className="shrink-0 text-gray-600" />
+                <button onClick={() => { setActiveModal('runner'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                  <Play size={12} className="shrink-0 text-dim" />
                   Collection Runner
                 </button>
-                <div className="hidden md:block mx-3 my-1.5 border-t border-gray-800" />
-                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed items-center gap-2.5">
-                  <Terminal size={12} className="shrink-0 text-gray-600" />
+                <div className="hidden md:block mx-3 my-1.5 border-t border-border" />
+                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed items-center gap-2.5">
+                  <Terminal size={12} className="shrink-0 text-dim" />
                   Copy as cURL
                 </button>
-                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors items-center gap-2.5">
-                  <Download size={12} className="shrink-0 text-gray-600" />
+                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors items-center gap-2.5">
+                  <Download size={12} className="shrink-0 text-dim" />
                   Import cURL
                 </button>
-                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <Upload size={12} className="shrink-0 text-gray-600" />
+                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                  <Upload size={12} className="shrink-0 text-dim" />
                   Export workspace
                 </button>
-                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex items-center gap-2.5">
-                  <FolderOpen size={12} className="shrink-0 text-gray-600" />
+                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                  <FolderOpen size={12} className="shrink-0 text-dim" />
                   Import workspace
                 </button>
               </div>
@@ -945,8 +967,9 @@ export default function Playground({ initialState, isShared }) {
           </div>
           <input ref={importFileRef} type="file" accept=".json" className="hidden"
             onChange={(e) => { if (e.target.files?.[0]) { importWorkspace(e.target.files[0]); e.target.value = ''; } }} />
-          <button onClick={() => setActiveModal('shortcuts')} title="Keyboard shortcuts (?)" className="hidden md:block text-gray-600 hover:text-gray-300 transition-colors p-1">
-            <Keyboard size={18} />
+          <button onClick={() => setActiveModal('shortcuts')} title="Keyboard shortcuts (?)"
+            className="hidden md:flex items-center justify-center w-8 h-8 shrink-0 border border-border hover:border-border-strong hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors">
+            <Keyboard size={14} />
           </button>
         </div>
       </header>
@@ -978,10 +1001,10 @@ export default function Playground({ initialState, isShared }) {
         <div className={`flex-1 flex-col overflow-hidden ${mobileView === 'library' ? 'hidden md:flex' : 'flex'}`}>
 
           {/* Tab bar (desktop only) */}
-          <div className="hidden md:flex items-center border-b border-gray-800 bg-gray-950 overflow-x-auto shrink-0 min-h-0">
+          <div className="hidden md:flex items-center border-b border-border bg-surface overflow-x-auto shrink-0 min-h-0">
             {tabs.map(tab => {
               const isActive = tab.id === activeTabId;
-              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-gray-800 shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-t-2 ${isActive ? 'bg-gray-900 text-white border-t-indigo-500' : 'text-gray-500 hover:text-gray-400 hover:bg-gray-900/30 border-t-transparent'}`;
+              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-border shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-t-2 ${isActive ? 'bg-surface-raised text-text border-t-accent' : 'text-muted hover:text-text hover:bg-surface-raised/30 border-t-transparent'}`;
               if (editingTab?.id === tab.id) {
                 return (
                   <div key={tab.id} className={tabClasses}>
@@ -998,7 +1021,7 @@ export default function Playground({ initialState, isShared }) {
                         if (e.key === 'Enter') { e.preventDefault(); commitTabRename(); }
                         if (e.key === 'Escape') setEditingTab(null);
                       }}
-                      className="min-w-0 flex-1 bg-gray-800 border border-gray-600 rounded px-1 py-0.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+                      className="min-w-0 flex-1 bg-surface-raised border border-border px-1 py-0.5 text-xs text-text focus:outline-none focus:border-accent"
                     />
                   </div>
                 );
@@ -1022,7 +1045,7 @@ export default function Playground({ initialState, isShared }) {
                     tabIndex={-1}
                     aria-label="Close tab"
                     onClick={(e) => { e.stopPropagation(); closeTab(tab.id); }}
-                    className="shrink-0 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-gray-300 transition-all leading-none"
+                    className="shrink-0 opacity-0 group-hover:opacity-100 text-dim hover:text-text transition-all leading-none"
                   >
                     <X size={10} />
                   </span>
@@ -1032,7 +1055,7 @@ export default function Playground({ initialState, isShared }) {
             <button
               onClick={newTab}
               title={`New tab (${isMac ? '⌘' : 'Ctrl'}+T)`}
-              className="px-3 py-2 text-gray-600 hover:text-gray-400 transition-colors shrink-0"
+              className="px-3 py-2 text-dim hover:text-text transition-colors shrink-0"
             >
               <Plus size={12} />
             </button>
@@ -1043,7 +1066,7 @@ export default function Playground({ initialState, isShared }) {
 
           {/* Request panel */}
           <div
-            className={`flex flex-col p-4 gap-4 overflow-y-auto pb-16 md:pb-4 bg-surface ${mobileView === 'request' ? 'flex' : 'hidden md:flex'}`}
+            className={`flex flex-col p-4 gap-4 overflow-y-auto pb-16 md:pb-4 bg-canvas ${mobileView === 'request' ? 'flex' : 'hidden md:flex'}`}
             style={{ flex: splitPct, minWidth: 0 }}
           >
             <RequestBar
@@ -1059,31 +1082,31 @@ export default function Playground({ initialState, isShared }) {
               onTimeoutChange={setRequestTimeout}
             />
 
-            <div className="flex-1 min-h-0 flex flex-col rounded-lg overflow-hidden bg-gray-900">
-              <div className="flex items-center gap-0.5 px-1.5 py-1.5 border-b border-gray-800/50 shrink-0">
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-canvas">
+              <div className="flex items-center gap-1 px-3 pt-1 border-b border-border-subtle shrink-0">
                 <TabButton id="params" activeTab={activeTab} onClick={() => setActiveTab('params')} icon={SlidersHorizontal}>
                   Params
-                  {req.url?.includes('?') && <span className="ml-0.5 text-gray-600">({req.url.split('?')[1].split('&').filter((p) => p).length})</span>}
+                  {req.url?.includes('?') && <span className="ml-1 text-dim">· {req.url.split('?')[1].split('&').filter((p) => p).length}</span>}
                 </TabButton>
                 <TabButton id="headers" activeTab={activeTab} onClick={() => setActiveTab('headers')} icon={List}>
                   Headers
-                  {req.headers.length > 0 && <span className="ml-0.5 text-gray-600">({req.headers.length})</span>}
+                  {req.headers.length > 0 && <span className="ml-1 text-dim">· {req.headers.length}</span>}
                 </TabButton>
                 <TabButton id="auth" activeTab={activeTab} onClick={() => setActiveTab('auth')} icon={Lock}>
                   Auth
-                  {req.auth?.type !== 'none' && <span className="ml-0.5 text-indigo-400">●</span>}
+                  {req.auth?.type !== 'none' && <span className="ml-0.5 text-accent">●</span>}
                 </TabButton>
                 {showBody && (
                   <TabButton id="body" activeTab={activeTab} onClick={() => setActiveTab('body')} icon={FileText}>
                     Body
-                    {req.bodyType !== 'none' && <span className={`ml-0.5 ${jsonInvalid ? 'text-red-400' : 'text-gray-600'}`}>{jsonInvalid ? '!' : `(${req.bodyType})`}</span>}
+                    {req.bodyType !== 'none' && <span className={`ml-0.5 ${jsonInvalid ? 'text-error' : 'text-dim'}`}>{jsonInvalid ? '!' : `(${req.bodyType})`}</span>}
                   </TabButton>
                 )}
                 {req.url?.trim() && (
                   <TabButton id="code" activeTab={activeTab} onClick={() => setActiveTab('code')} icon={Code2}>Code</TabButton>
                 )}
               </div>
-              <div className="p-3 flex-1 overflow-y-auto">
+              <div className="px-4 py-4 flex-1 overflow-y-auto">
                 {activeTab === 'params' && <ParamsEditor url={req.url} onChange={(url) => setReq((r) => ({ ...r, url }))} />}
                 {activeTab === 'headers' && <HeadersEditor headers={req.headers} onChange={(headers) => setReq((r) => ({ ...r, headers }))} />}
                 {activeTab === 'auth' && <AuthEditor auth={req.auth} onChange={(auth) => setReq((r) => ({ ...r, auth }))} />}
@@ -1107,14 +1130,14 @@ export default function Playground({ initialState, isShared }) {
 
             {/* Last response summary — mobile only; on desktop the response panel is already visible */}
             {response && !response.error && !isLoading && (
-              <div className="shrink-0 px-1 text-xs text-gray-600 flex md:hidden items-center gap-1.5">
+              <div className="shrink-0 px-1 text-xs text-dim flex md:hidden items-center gap-1.5">
                 <span>Last response:</span>
                 <span className={statusColor(response.status)}>{response.status}</span>
-                <span className="text-gray-700 select-none">·</span>
+                <span className="text-dim select-none">·</span>
                 <span className={latencyColor(response.time)}>{response.time}ms</span>
                 {activeTabData.respondedAt && (
                   <>
-                    <span className="text-gray-700 select-none">·</span>
+                    <span className="text-dim select-none">·</span>
                     <span>{new Date(activeTabData.respondedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
                   </>
                 )}
@@ -1124,23 +1147,23 @@ export default function Playground({ initialState, isShared }) {
 
           {/* Drag handle */}
           <div
-            className="hidden md:block w-1 bg-gray-800 hover:bg-indigo-500/40 cursor-col-resize shrink-0 transition-colors select-none"
+            className="hidden md:block w-1 bg-border hover:bg-accent/40 cursor-col-resize shrink-0 transition-colors select-none"
             onMouseDown={handleDragStart}
           />
 
           {/* Response panel */}
           <div
-            className={`flex-col overflow-hidden bg-gray-950 border-l border-gray-800/60 ${mobileView === 'response' ? 'flex' : 'hidden md:flex'}`}
+            className={`flex-col overflow-hidden bg-canvas border-l border-border-subtle ${mobileView === 'response' ? 'flex' : 'hidden md:flex'}`}
             style={{ flex: 100 - splitPct, minWidth: 0 }}
           >
-            <div className="border-b border-gray-800 px-4 py-2.5 shrink-0 flex items-center gap-2 bg-gray-900/60 min-h-[41px]">
+            <div className=" border-border px-4 py-2.5 shrink-0 flex items-center gap-2 bg-canvas min-h-[41px]">
               {response && !response.error && (
                 <>
                   {response.streaming && (
-                    <div className="flex items-center gap-1 text-xs text-indigo-400">
+                    <div className="flex items-center gap-1 text-xs text-accent">
                       <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400" />
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
                       </span>
                       Streaming
                     </div>
@@ -1153,10 +1176,10 @@ export default function Playground({ initialState, isShared }) {
                   >
                     {response.status} {response.statusText}
                   </a>
-                  <span className="text-gray-700 text-xs select-none">·</span>
+                  <span className="text-dim text-xs select-none">·</span>
                   <span className={`text-xs tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
-                  <span className="text-gray-700 text-xs select-none">·</span>
-                  <span className="text-xs text-gray-400 tabular-nums">{formatSize(response.body)}</span>
+                  <span className="text-dim text-xs select-none">·</span>
+                  <span className="text-xs text-muted tabular-nums">{formatSize(response.body)}</span>
                 </>
               )}
             </div>
@@ -1175,16 +1198,16 @@ export default function Playground({ initialState, isShared }) {
       </div>
 
       {/* Mobile bottom nav */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-gray-800 bg-gray-950/95 backdrop-blur-sm">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-border bg-surface">
         <button
           onClick={() => setMobileView('request')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors ${mobileView === 'request' ? 'text-white' : 'text-gray-500'}`}
+          className={`flex-1 py-3 text-xs font-medium transition-colors ${mobileView === 'request' ? 'text-text' : 'text-muted'}`}
         >
           Request
         </button>
         <button
           onClick={() => setMobileView('response')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-2 ${mobileView === 'response' ? 'text-white' : 'text-gray-500'}`}
+          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-2 ${mobileView === 'response' ? 'text-text' : 'text-muted'}`}
         >
           Response
           {response && !response.error && (
@@ -1195,10 +1218,10 @@ export default function Playground({ initialState, isShared }) {
         </button>
         <button
           onClick={() => setMobileView('library')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${mobileView === 'library' ? 'text-white' : 'text-gray-500'}`}
+          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${mobileView === 'library' ? 'text-text' : 'text-muted'}`}
         >
           Library
-          {saved.length > 0 && <span className="text-gray-700 text-xs">{saved.length}</span>}
+          {saved.length > 0 && <span className="text-dim text-xs">{saved.length}</span>}
         </button>
       </div>
     </div>

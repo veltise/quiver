@@ -16,11 +16,11 @@ export default async function LivePage({ params }) {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
         <div className="text-center">
-          <p className="text-gray-400 font-mono text-sm mb-2">Session not found</p>
-          <p className="text-gray-600 text-xs mb-4">This live session may have ended or expired.</p>
-          <a href="/" className="text-indigo-400 hover:text-indigo-300 text-sm font-mono transition-colors">
+          <p className="text-muted font-mono text-sm mb-2">Session not found</p>
+          <p className="text-dim text-xs mb-4">This live session may have ended or expired.</p>
+          <a href="/" className="text-accent hover:text-accent text-sm font-mono transition-colors">
             ← Go to Quiver
           </a>
         </div>

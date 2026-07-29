@@ -38,12 +38,13 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
   const canSend = !isLoading && (/^https?:\/\/.+/.test(url.trim()) || /^\{\{.+/.test(url.trim())) && !jsonInvalid;
 
   return (
+    <div className="flex flex-col gap-1.5">
     <div className="flex gap-2 items-start">
       {/* ref wraps both the bar AND the dropdown so outside-click works correctly.
           The dropdown must be a sibling of overflow-hidden, not inside it. */}
       <div ref={methodRef} className="relative flex-1 min-w-0">
-        <div className="flex h-11 w-full rounded-lg border border-gray-700 bg-gray-900 focus-within:border-gray-600 overflow-hidden transition-colors">
-          <div className={`relative shrink-0 border-r border-gray-700/60 flex items-center transition-colors ${methodBgClass(method)}`}>
+        <div className="flex h-11 w-full border border-border bg-surface-raised focus-within:border-[rgba(242,237,228,.3)] overflow-hidden transition-colors">
+          <div className="relative shrink-0 border-r border-border flex items-center transition-colors">
             <button
               type="button"
               onClick={() => setMethodOpen(v => !v)}
@@ -62,19 +63,19 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSend()}
-            className="flex-1 bg-transparent px-4 text-sm placeholder-gray-700 focus:outline-none font-mono min-w-0 text-gray-100"
+            className="flex-1 bg-transparent  px-4 text-sm placeholder-dim focus:outline-none font-mono min-w-0 text-text"
           />
         </div>
 
         {/* Dropdown rendered outside overflow:hidden so it isn't clipped */}
         {methodOpen && (
-          <div className="absolute top-12 left-0 mt-0.5 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 z-50 min-w-[110px]">
+          <div className="absolute top-12 left-0 mt-0.5 bg-surface-raised border border-border shadow-2xl py-1 z-50 min-w-[110px]">
             {METHODS.map(m => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { onMethodChange(m); setMethodOpen(false); }}
-                className={`w-full text-left px-3 py-1.5 text-xs font-bold transition-colors hover:bg-gray-800 ${methodColor(m)} ${m === method ? 'bg-gray-800/50' : ''}`}
+                className={`w-full text-left px-3 py-1.5 text-xs font-bold transition-colors hover:bg-[rgba(242,237,228,.06)] ${methodColor(m)} ${m === method ? 'bg-[rgba(242,237,228,.04)]' : ''}`}
               >
                 {m}
               </button>
@@ -84,34 +85,35 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
       </div>
 
       {/* Send button */}
-      <div className="flex flex-col items-center gap-0.5 shrink-0">
-        <button
-          suppressHydrationWarning
-          onClick={onSend}
-          disabled={!canSend}
-          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-800 active:bg-indigo-800 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors"
-        >
-          {isLoading ? <span className="inline-flex gap-1"><span className="animate-bounce" style={{animationDelay:'0ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'150ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'300ms'}}>·</span></span> : 'Send →'}
-        </button>
-        <span suppressHydrationWarning className="text-xs text-gray-700 whitespace-nowrap">
-          {isMac ? '⌘' : 'Ctrl'}+↵
-        </span>
-      </div>
+      <button
+        suppressHydrationWarning
+        onClick={onSend}
+        disabled={!canSend}
+        className="chamfer-send shrink-0 h-11 px-6 bg-accent hover:bg-accent-hover active:bg-accent-hover text-ink disabled:bg-surface-raised disabled:text-dim disabled:opacity-60 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
+      >
+        {isLoading ? <span className="inline-flex gap-1"><span className="animate-bounce" style={{animationDelay:'0ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'150ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'300ms'}}>·</span></span> : 'Send'}
+      </button>
 
       {/* Timeout */}
-      <div className="flex items-center gap-1 h-11 border border-gray-700 rounded-lg px-2 shrink-0 bg-gray-900 hover:border-gray-600 transition-colors" title="Request timeout (seconds)">
-        <Timer size={11} className="text-gray-600 shrink-0" aria-hidden="true" />
-        <input
-          type="text"
-          inputMode="numeric"
-          aria-label="Request timeout in seconds"
-          value={timeoutInput}
-          onChange={handleTimeoutChange}
-          onBlur={handleTimeoutBlur}
-          className="w-9 bg-transparent text-sm text-center focus:outline-none text-gray-500 focus:text-gray-300 transition-colors"
-        />
-        <span className="text-gray-600 text-xs">s</span>
+      <div className="flex items-center gap-1.5 h-11 px-2 shrink-0" title="Request timeout (seconds)">
+        <Timer size={11} className="text-dim shrink-0" aria-hidden="true" />
+        <div className="flex items-baseline">
+          <input
+            type="text"
+            inputMode="numeric"
+            aria-label="Request timeout in seconds"
+            value={timeoutInput}
+            onChange={handleTimeoutChange}
+            onBlur={handleTimeoutBlur}
+            className="w-5 bg-transparent text-sm text-right focus:outline-none text-muted focus:text-text transition-colors"
+          />
+          <span className="text-dim text-xs">s</span>
+        </div>
       </div>
+    </div>
+    <span suppressHydrationWarning className="font-mono text-[10.5px] text-dim">
+      {isMac ? '⌘' : 'Ctrl'}+↵ to send
+    </span>
     </div>
   );
 }

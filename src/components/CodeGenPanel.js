@@ -32,36 +32,36 @@ function highlight(code, rules) {
 }
 
 const JS_RULES = [
-  [/\/\/[^\n]*/, 'text-gray-500'],
-  [/"(?:[^"\\]|\\.)*"/, 'text-green-300'],
-  [/'(?:[^'\\]|\\.)*'/, 'text-green-300'],
-  [/`(?:[^`\\]|\\.)*`/, 'text-green-300'],
-  [/\b(?:const|let|var|await|async|return|new|true|false|null|undefined)\b/, 'text-purple-400'],
-  [/\b(?:fetch|axios|console|response|data|JSON)\b/, 'text-blue-300'],
-  [/\.\w+(?=\s*\()/, 'text-sky-300'],
-  [/[{}[\](),;:]/, 'text-gray-500'],
-  [/\d+/, 'text-orange-300'],
+  [/\/\/[^\n]*/, 'text-muted'],
+  [/"(?:[^"\\]|\\.)*"/, 'text-info'],
+  [/'(?:[^'\\]|\\.)*'/, 'text-info'],
+  [/`(?:[^`\\]|\\.)*`/, 'text-info'],
+  [/\b(?:const|let|var|await|async|return|new|true|false|null|undefined)\b/, 'text-accent'],
+  [/\b(?:fetch|axios|console|response|data|JSON)\b/, 'text-success'],
+  [/\.\w+(?=\s*\()/, 'text-accent'],
+  [/[{}[\](),;:]/, 'text-muted'],
+  [/\d+/, 'text-text'],
 ];
 
 const LANG_RULES = {
   cURL: [
-    [/'[^']*'/, 'text-green-300'],
-    [/\bcurl\b/, 'text-indigo-400'],
-    [/--?[\w-]+/, 'text-yellow-300'],
-    [/\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/, 'text-sky-300'],
-    [/\\$/, 'text-gray-600'],
+    [/'[^']*'/, 'text-info'],
+    [/\bcurl\b/, 'text-accent'],
+    [/--?[\w-]+/, 'text-warning'],
+    [/\b(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/, 'text-accent'],
+    [/\\$/, 'text-dim'],
   ],
   Fetch:  JS_RULES,
   Axios:  JS_RULES,
   Python: [
-    [/#[^\n]*/, 'text-gray-500'],
-    [/"(?:[^"\\]|\\.)*"/, 'text-green-300'],
-    [/'(?:[^'\\]|\\.)*'/, 'text-green-300'],
-    [/\b(?:import|from|None|True|False|return|def|class|if|elif|else|and|or|not|in|is)\b/, 'text-purple-400'],
-    [/\b(?:print|requests|headers|payload|response|data)\b/, 'text-blue-300'],
-    [/\.\w+(?=\s*\()/, 'text-sky-300'],
-    [/[{}[\](),=:]/, 'text-gray-500'],
-    [/\d+/, 'text-orange-300'],
+    [/#[^\n]*/, 'text-muted'],
+    [/"(?:[^"\\]|\\.)*"/, 'text-info'],
+    [/'(?:[^'\\]|\\.)*'/, 'text-info'],
+    [/\b(?:import|from|None|True|False|return|def|class|if|elif|else|and|or|not|in|is)\b/, 'text-accent'],
+    [/\b(?:print|requests|headers|payload|response|data)\b/, 'text-success'],
+    [/\.\w+(?=\s*\()/, 'text-accent'],
+    [/[{}[\](),=:]/, 'text-muted'],
+    [/\d+/, 'text-text'],
   ],
 };
 
@@ -98,7 +98,7 @@ export default function CodeGenPanel({ req }) {
             <button
               key={l}
               onClick={() => setLang(l)}
-              className={`px-3 py-1 text-xs rounded transition-colors ${lang === l ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'}`}
+              className={`px-3 py-1 text-xs rounded transition-colors ${lang === l ? 'bg-[rgba(242,237,228,.08)] text-text' : 'text-muted hover:text-text hover:bg-surface-raised'}`}
             >
               {l}
             </button>
@@ -106,13 +106,13 @@ export default function CodeGenPanel({ req }) {
         </div>
         <button
           onClick={copy}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-200 transition-colors px-2 py-1 rounded border border-gray-700 hover:border-gray-500"
+          className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-border-strong"
         >
           <Copy size={11} />{copied ? 'Copied' : 'Copy'}
         </button>
       </div>
       <pre
-        className="text-sm font-mono overflow-auto max-h-72 whitespace-pre leading-relaxed bg-gray-800 rounded p-4"
+        className="text-sm font-mono overflow-auto max-h-72 whitespace-pre leading-relaxed bg-surface-raised rounded p-4"
         dangerouslySetInnerHTML={{ __html: highlighted }}
       />
     </div>

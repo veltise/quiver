@@ -21,10 +21,10 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-20 pt-24" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface border border-border rounded-xl w-full max-w-lg p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold">Environments</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-muted hover:text-text text-lg leading-none">×</button>
         </div>
         <div className="flex gap-1 flex-wrap mb-4">
           {envSets.map((s) => {
@@ -32,7 +32,7 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
             return (
               <div
                 key={s.id}
-                className={`flex items-center gap-1 px-3 py-1 rounded text-xs transition-colors ${isActive ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'}`}
+                className={`flex items-center gap-1 px-3 py-1 rounded text-xs transition-colors ${isActive ? 'bg-accent text-text' : 'bg-surface-raised text-muted hover:text-text'}`}
               >
                 {renamingId === s.id ? (
                   <input
@@ -61,11 +61,11 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
               </div>
             );
           })}
-          <button onClick={onAddEnv} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-200 transition-colors">+ Add</button>
+          <button onClick={onAddEnv} className="px-3 py-1 text-xs text-muted hover:text-text transition-colors">+ Add</button>
         </div>
-        <p className="text-xs text-gray-500 mb-4">
-          Use <code className="bg-gray-800 px-1 rounded text-gray-300">{'{{variable}}'}</code> in your URL, headers, or body.
-          {activeEnvId && <span className="ml-2 text-gray-600">Click the active tab name to rename it.</span>}
+        <p className="text-xs text-muted mb-4">
+          Use <code className="bg-surface-raised px-1 rounded text-text">{'{{variable}}'}</code> in your URL, headers, or body.
+          {activeEnvId && <span className="ml-2 text-dim">Click the active tab name to rename it.</span>}
         </p>
         {activeEnvId && (
           <EnvEditor vars={activeVars} onChange={(vars) => onChangeVars(activeEnvId, vars)} />

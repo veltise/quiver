@@ -9,8 +9,8 @@ export default function Toast({ toasts }) {
           key={t.id}
           className={`px-4 py-2.5 rounded-lg text-sm shadow-lg ${
             t.type === 'error'
-              ? 'bg-red-950 text-red-300 border border-red-800'
-              : 'bg-gray-800 text-gray-100 border border-gray-700'
+              ? 'bg-error/10 text-error border border-error/30'
+              : 'bg-surface-raised text-text border border-border'
           }`}
         >
           {t.message}

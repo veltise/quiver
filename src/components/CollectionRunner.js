@@ -122,48 +122,48 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+      <div className="bg-surface border border-border rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-semibold">Collection Runner</h2>
             {hasRun && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-green-400">{passed} passed</span>
-                <span className="text-gray-700">·</span>
-                <span className="text-red-400">{failed} failed</span>
+                <span className="text-success">{passed} passed</span>
+                <span className="text-dim">·</span>
+                <span className="text-error">{failed} failed</span>
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-muted hover:text-text transition-colors text-lg leading-none">×</button>
         </div>
 
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-800">
-          <button onClick={toggleAll} disabled={running} className="text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40">
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
+          <button onClick={toggleAll} disabled={running} className="text-xs text-muted hover:text-text transition-colors disabled:opacity-40">
             {selected.size === saved.length ? 'Deselect all' : 'Select all'}
           </button>
-          <span className="text-gray-700 text-xs">·</span>
-          <span className="text-xs text-gray-500">{toRun.length} selected</span>
+          <span className="text-dim text-xs">·</span>
+          <span className="text-xs text-muted">{toRun.length} selected</span>
           <div className="flex items-center gap-1.5 ml-auto">
-            <label className="text-xs text-gray-500">Delay</label>
+            <label className="text-xs text-muted">Delay</label>
             <input
               type="number"
               min="0"
               max="60"
               value={delay}
               onChange={(e) => setDelay(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-12 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-gray-500 font-mono"
+              className="w-12 bg-surface-raised border border-border rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-border-strong font-mono"
             />
-            <span className="text-xs text-gray-500">s</span>
+            <span className="text-xs text-muted">s</span>
           </div>
           {running ? (
-            <button onClick={() => { abortRef.current = true; }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 rounded transition-colors">
+            <button onClick={() => { abortRef.current = true; }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-error hover:bg-error rounded transition-colors">
               <Square size={10} />Stop
             </button>
           ) : (
             <button
               onClick={runAll}
               disabled={!toRun.length}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
             >
               <Play size={10} />Run
             </button>
@@ -172,17 +172,17 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
 
         <div className="overflow-y-auto flex-1">
           {saved.length === 0 ? (
-            <p className="text-center text-gray-600 text-sm py-10">No saved requests yet</p>
+            <p className="text-center text-dim text-sm py-10">No saved requests yet</p>
           ) : (
             Object.entries(groups).map(([group, items]) => (
               <div key={group}>
-                <div className="px-5 py-2 text-xs text-gray-600 uppercase tracking-wider bg-gray-900/80 sticky top-0">
+                <div className="px-5 py-2 text-xs text-dim uppercase tracking-wider bg-surface sticky top-0">
                   {group}
                 </div>
                 {items.map((entry) => {
                   const r = resultMap[entry.id];
                   return (
-                    <div key={entry.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-800/40 border-b border-gray-800/40 last:border-0">
+                    <div key={entry.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-[rgba(242,237,228,.04)] border-b border-border-subtle last:border-0">
                       <input
                         type="checkbox"
                         checked={selected.has(entry.id)}
@@ -191,24 +191,24 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
                         className="accent-indigo-500 shrink-0"
                       />
                       <span className={`text-xs font-bold w-14 shrink-0 ${methodColor(entry.method)}`}>{entry.method}</span>
-                      <span className="text-sm text-gray-300 flex-1 truncate">{entry.name}</span>
+                      <span className="text-sm text-text flex-1 truncate">{entry.name}</span>
                       <div className="flex items-center gap-2 shrink-0 min-w-[120px] justify-end">
                         {!r && <span />}
-                        {r?.status === 'pending' && <span className="text-xs text-gray-600">queued</span>}
-                        {r?.status === 'running' && <Loader2 size={13} className="text-indigo-400 animate-spin" />}
+                        {r?.status === 'pending' && <span className="text-xs text-dim">queued</span>}
+                        {r?.status === 'running' && <Loader2 size={13} className="text-accent animate-spin" />}
                         {(r?.status === 'pass' || r?.status === 'fail') && (
                           <>
-                            <span className={`text-xs font-mono font-bold ${r.status === 'pass' ? 'text-green-400' : 'text-red-400'}`}>{r.httpStatus}</span>
-                            <span className="text-xs text-gray-600 font-mono">{r.time}ms</span>
+                            <span className={`text-xs font-mono font-bold ${r.status === 'pass' ? 'text-success' : 'text-error'}`}>{r.httpStatus}</span>
+                            <span className="text-xs text-dim font-mono">{r.time}ms</span>
                             {r.status === 'pass'
-                              ? <CheckCircle2 size={13} className="text-green-400" />
-                              : <XCircle size={13} className="text-red-400" />}
+                              ? <CheckCircle2 size={13} className="text-success" />
+                              : <XCircle size={13} className="text-error" />}
                           </>
                         )}
                         {r?.status === 'error' && (
                           <>
-                            <span className="text-xs text-orange-400 truncate max-w-[140px]" title={r.error}>{r.error}</span>
-                            <XCircle size={13} className="text-orange-400" />
+                            <span className="text-xs text-warning truncate max-w-[140px]" title={r.error}>{r.error}</span>
+                            <XCircle size={13} className="text-warning" />
                           </>
                         )}
                       </div>

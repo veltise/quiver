@@ -5,7 +5,7 @@ export default function Hl({ text, indices }) {
     <>
       {[...text].map((ch, i) =>
         set.has(i)
-          ? <span key={i} className="text-indigo-300 font-semibold">{ch}</span>
+          ? <span key={i} className="text-accent font-semibold">{ch}</span>
           : ch
       )}
     </>

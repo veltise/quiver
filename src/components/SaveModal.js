@@ -17,19 +17,19 @@ export default function SaveModal({ initialName, onSave, onCancel, title = 'Save
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           autoFocus
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm placeholder-gray-500 focus:outline-none focus:border-gray-500"
+          className="bg-surface-raised border border-border rounded px-3 py-2 text-sm placeholder-dim focus:outline-none focus:border-border-strong"
           placeholder="e.g. GitHub get user"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <div className="flex gap-2 justify-end">
-          <button type="button" onClick={onCancel} className="px-4 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+          <button type="button" onClick={onCancel} className="px-4 py-1.5 text-sm text-muted hover:text-text transition-colors">
             Cancel
           </button>
           <button
             type="submit"
             disabled={!name.trim()}
-            className="px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+            className="px-4 py-1.5 text-sm bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
           >
             Save
           </button>

@@ -1,11 +1,24 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/supabase', () => ({ createServerClient: vi.fn() }));
+vi.mock('@/lib/db', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    rateLimit: vi.fn(async () => true),
+    tooManyRequests: () => new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 }),
+  };
+});
 
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit } from '@/lib/db';
 import { GET } from './route';
 
 const ctx = { params: Promise.resolve({ slug: 'my-slug' }) };
+
+beforeEach(() => {
+  vi.mocked(rateLimit).mockResolvedValue(true);
+});
 
 // Captures every .eq()/.or() call so tests can prove both the is_public
 // and expiry filters are actually applied, not just the slug lookup.
@@ -43,5 +56,14 @@ describe('GET /api/p/[slug]', () => {
 
     const res = await GET(new Request('http://x'), ctx);
     expect(res.status).toBe(404);
+  });
+
+  it('rejects when the read rate limit is exceeded', async () => {
+    vi.mocked(rateLimit).mockResolvedValue(false);
+    const { client } = makeMockClient({ data: { state: {} } });
+    createServerClient.mockReturnValue(client);
+
+    const res = await GET(new Request('http://x'), ctx);
+    expect(res.status).toBe(429);
   });
 });

@@ -8,7 +8,7 @@ const MAX_SHARES_PER_SESSION = 200;
 export async function POST(request) {
   if (!await rateLimit(`write:${getClientIp(request)}`, { limit: 30, window: 60 })) return tooManyRequests();
 
-  const { sessionId, method, url, state } = await request.json();
+  const { sessionId, url, state } = await request.json();
   if (!isValidSessionId(sessionId) || !state) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
   if (url.length > 4096) return NextResponse.json({ error: 'URL too long' }, { status: 400 });
@@ -29,7 +29,7 @@ export async function POST(request) {
     headers: (state.headers ?? []).filter((h) => h.key?.trim().toLowerCase() !== 'authorization'),
   };
 
-  const name = suggestName(method, url) || method;
+  const name = suggestName(url) || 'request';
   const baseSlug = nameToSlug(name);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 

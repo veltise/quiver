@@ -30,9 +30,9 @@ function parseCookies(headers) {
 }
 
 function timingBarColor(ms) {
-  if (ms < 200) return 'bg-green-500';
-  if (ms < 1000) return 'bg-yellow-500';
-  return 'bg-red-500';
+  if (ms < 200) return 'bg-success';
+  if (ms < 1000) return 'bg-warning';
+  return 'bg-error';
 }
 
 function HeaderRow({ name, value }) {
@@ -41,26 +41,26 @@ function HeaderRow({ name, value }) {
   try { prettyJson = JSON.stringify(JSON.parse(value), null, 2); } catch {}
 
   return (
-    <div className="flex gap-3 py-1.5 border-b border-gray-800/50 last:border-0 text-sm">
+    <div className="flex gap-3 py-1.5 border-b border-border-subtle last:border-0 text-sm">
       <a
         href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/${name}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-48 shrink-0 text-gray-500 hover:text-indigo-400 transition-colors truncate"
+        className="w-48 shrink-0 text-info hover:text-accent transition-colors truncate whitespace-nowrap"
       >
         {name}
       </a>
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-2">
-          <span className="text-gray-200 break-all flex-1">{value}</span>
+          <span className="text-text break-all flex-1">{value}</span>
           {prettyJson && (
-            <button onClick={() => setExpanded(v => !v)} className="text-xs text-gray-600 hover:text-gray-400 transition-colors shrink-0 mt-0.5">
+            <button onClick={() => setExpanded(v => !v)} className="text-xs text-dim hover:text-text transition-colors shrink-0 mt-0.5">
               {expanded ? '▴' : '▾'}
             </button>
           )}
         </div>
         {prettyJson && expanded && (
-          <pre className="mt-1.5 text-xs bg-gray-900 rounded p-2 overflow-auto max-h-40 text-gray-300 leading-relaxed font-mono">{prettyJson}</pre>
+          <pre className="mt-1.5 text-xs bg-surface-raised p-2 overflow-auto max-h-40 text-text leading-relaxed font-mono">{prettyJson}</pre>
         )}
       </div>
     </div>
@@ -82,26 +82,26 @@ function ExtractPopup({ value, suggestedName, position, onSave, onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl p-3 w-56 animate-fade-up" style={{ left, top }}>
-        <p className="text-xs text-gray-400 mb-2">Save as environment variable</p>
-        <div className="flex items-center gap-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5 mb-2">
-          <span className="text-gray-600 text-xs select-none">{'{{'}</span>
+      <div className="fixed z-50 bg-surface-raised border border-border shadow-2xl p-3 w-56 animate-fade-up" style={{ left, top }}>
+        <p className="text-xs text-muted mb-2">Save as environment variable</p>
+        <div className="flex items-center gap-1 bg-surface border border-border px-2 py-1.5 mb-2">
+          <span className="text-dim text-xs select-none">{'{{'}</span>
           <input
             autoFocus
-            className="flex-1 bg-transparent text-xs focus:outline-none text-gray-200 min-w-0"
+            className="flex-1 bg-transparent text-xs focus:outline-none text-text min-w-0"
             placeholder="variable_name"
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && name.trim()) onSave(name.trim(), value); }}
           />
-          <span className="text-gray-600 text-xs select-none">{'}}'}</span>
+          <span className="text-dim text-xs select-none">{'}}'}</span>
         </div>
         <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1">Cancel</button>
+          <button onClick={onClose} className="text-xs text-muted hover:text-text transition-colors px-2 py-1">Cancel</button>
           <button
             onClick={() => { if (name.trim()) onSave(name.trim(), value); }}
             disabled={!name.trim()}
-            className="text-xs bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 rounded transition-colors"
+            className="text-xs bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 transition-colors"
           >
             Save
           </button>
@@ -114,13 +114,13 @@ function ExtractPopup({ value, suggestedName, position, onSave, onClose }) {
 // ─── JSON Tree ────────────────────────────────────────────────────────────────
 
 function JsonPrimitive({ value, onExtract, nodeKey }) {
-  if (value === null) return <span className="text-gray-500 select-text">null</span>;
+  if (value === null) return <span className="text-muted select-text">null</span>;
   if (typeof value === 'boolean')
-    return <span className="text-sky-300 cursor-pointer hover:opacity-75 transition-opacity select-text" onClick={e => onExtract(String(value), nodeKey, e)}>{String(value)}</span>;
+    return <span className="text-info cursor-pointer hover:opacity-75 transition-opacity select-text" onClick={e => onExtract(String(value), nodeKey, e)}>{String(value)}</span>;
   if (typeof value === 'number')
-    return <span className="text-amber-300 cursor-pointer hover:opacity-75 transition-opacity select-text" onClick={e => onExtract(String(value), nodeKey, e)}>{value}</span>;
+    return <span className="text-text cursor-pointer hover:opacity-75 transition-opacity select-text" onClick={e => onExtract(String(value), nodeKey, e)}>{value}</span>;
   if (typeof value === 'string')
-    return <span className="text-emerald-300 cursor-pointer hover:opacity-75 transition-opacity break-all select-text" onClick={e => onExtract(value, nodeKey, e)}>"{value}"</span>;
+    return <span className="text-info cursor-pointer hover:opacity-75 transition-opacity break-all select-text" onClick={e => onExtract(value, nodeKey, e)}>"{value}"</span>;
   return null;
 }
 
@@ -135,7 +135,7 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
 
   const keyLabel = nodeKey !== undefined ? (
     <span
-      className="text-violet-300 hover:text-violet-200 cursor-pointer transition-colors"
+      className="text-accent hover:text-accent-hover cursor-pointer transition-colors"
       onClick={e => { e.stopPropagation(); onCopyPath(path); }}
       title={`Copy path: ${path}`}
     >
@@ -146,7 +146,7 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
   if (!isObj) {
     return (
       <div className="flex items-baseline flex-wrap gap-x-1 leading-[1.75]">
-        {keyLabel && <>{keyLabel}<span className="text-gray-600 mr-0.5">:</span></>}
+        {keyLabel && <>{keyLabel}<span className="text-dim mr-0.5">:</span></>}
         <JsonPrimitive value={value} onExtract={onExtract} nodeKey={nodeKey ?? ''} />
       </div>
     );
@@ -155,8 +155,8 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
   if (!entries.length) {
     return (
       <div className="flex items-baseline gap-1 leading-[1.75]">
-        {keyLabel && <>{keyLabel}<span className="text-gray-600">:</span></>}
-        <span className="text-gray-600">{isArr ? '[ ]' : '{ }'}</span>
+        {keyLabel && <>{keyLabel}<span className="text-dim">:</span></>}
+        <span className="text-dim">{isArr ? '[ ]' : '{ }'}</span>
       </div>
     );
   }
@@ -171,28 +171,28 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
       >
         <ChevronRight
           size={11}
-          className={`text-gray-600 shrink-0 transition-transform duration-150 group-hover:text-indigo-400 ${open ? 'rotate-90' : ''}`}
+          className={`text-dim shrink-0 transition-transform duration-150 group-hover:text-accent ${open ? 'rotate-90' : ''}`}
         />
         {keyLabel && (
           <div className="flex items-baseline gap-1" onClick={e => e.stopPropagation()}>
             {keyLabel}
-            <span className="text-gray-600">:</span>
+            <span className="text-dim">:</span>
           </div>
         )}
-        <span className="text-gray-500 ml-0.5">{isArr ? '[' : '{'}</span>
+        <span className="text-muted ml-0.5">{isArr ? '[' : '{'}</span>
         {!open && (
           <>
-            <span className="text-gray-700 text-xs mx-1.5">
+            <span className="text-dim text-xs mx-1.5">
               {isArr
                 ? `${entries.length} ${entries.length === 1 ? 'item' : 'items'}`
                 : `${entries.length} ${entries.length === 1 ? 'key' : 'keys'}`}
             </span>
-            <span className="text-gray-500">{isArr ? ']' : '}'}</span>
+            <span className="text-muted">{isArr ? ']' : '}'}</span>
           </>
         )}
       </div>
       {open && (
-        <div className="relative ml-[14px] pl-3.5 border-l border-gray-800/60 hover:border-indigo-500/20 transition-colors">
+        <div className="relative ml-[14px] pl-3.5 border-l border-border-subtle hover:border-accent/20 transition-colors">
           {entries.map(([k, v]) => (
             <JsonNode
               key={k}
@@ -206,7 +206,7 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
               onToggle={onToggle}
             />
           ))}
-          <div><span className="text-gray-500">{isArr ? ']' : '}'}</span></div>
+          <div><span className="text-muted">{isArr ? ']' : '}'}</span></div>
         </div>
       )}
     </div>
@@ -267,67 +267,67 @@ function JsonTree({ body, onExtract, onCopyPath }) {
 
   return (
     <div className="font-mono text-[13px]">
-      <div className="sticky top-0 z-10 px-4 py-2.5 bg-gray-950/95 backdrop-blur-sm border-b border-gray-800/40">
+      <div className="sticky top-0 z-10 px-4 py-2.5 bg-surface-raised border-b border-border-subtle">
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
-            <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+            <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-dim pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search keys and values…"
-              className="w-full bg-gray-900/70 border border-gray-800 rounded-md pl-7 pr-6 py-1.5 text-xs placeholder-gray-700 focus:outline-none focus:border-indigo-500/40 focus:bg-gray-900 transition-colors"
+              className="w-full bg-surface-raised border border-border pl-7 pr-6 py-1.5 text-xs placeholder-dim focus:outline-none focus:border-accent/40 focus:bg-surface-raised transition-colors"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors">
+              <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-dim hover:text-text transition-colors">
                 <X size={10} />
               </button>
             )}
           </div>
           {!flat && (
             <div className="flex gap-1 shrink-0">
-              <button onClick={expandAll} title="Expand all" className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-800">
+              <button onClick={expandAll} title="Expand all" className="text-dim hover:text-text transition-colors p-1 rounded hover:bg-[rgba(242,237,228,.06)]">
                 <ChevronsUpDown size={12} />
               </button>
-              <button onClick={collapseAll} title="Collapse all" className="text-gray-600 hover:text-gray-300 transition-colors p-1 rounded hover:bg-gray-800">
+              <button onClick={collapseAll} title="Collapse all" className="text-dim hover:text-text transition-colors p-1 rounded hover:bg-[rgba(242,237,228,.06)]">
                 <ChevronsDownUp size={12} />
               </button>
             </div>
           )}
         </div>
         {q && flat && (
-          <p className="text-[11px] text-gray-700 mt-1.5">{flat.length} result{flat.length !== 1 ? 's' : ''}</p>
+          <p className="text-[11px] text-dim mt-1.5">{flat.length} result{flat.length !== 1 ? 's' : ''}</p>
         )}
       </div>
 
       <div className="p-4">
         {flat ? (
           flat.length === 0 ? (
-            <p className="text-gray-600 text-xs py-2">No results for "{search}"</p>
+            <p className="text-dim text-xs py-2">No results for "{search}"</p>
           ) : (
             <div className="flex flex-col gap-0.5">
               {flat.slice(0, 200).map(({ path, value }) => (
-                <div key={path} className="flex items-baseline gap-2 group hover:bg-gray-900/50 rounded px-1 -mx-1 py-0.5">
+                <div key={path} className="flex items-baseline gap-2 group hover:bg-[rgba(242,237,228,.04)] px-1 -mx-1 py-0.5">
                   <span
-                    className="text-violet-400/60 text-xs cursor-pointer hover:text-violet-300 transition-colors shrink-0 truncate max-w-[180px]"
+                    className="text-accent/60 text-xs cursor-pointer hover:text-accent transition-colors shrink-0 truncate max-w-[180px]"
                     onClick={() => onCopyPath(path)}
                     title={path}
                   >
                     {path}
                   </span>
-                  <span className="text-gray-700 text-xs shrink-0">→</span>
+                  <span className="text-dim text-xs shrink-0">→</span>
                   <span className={
-                    value === null ? 'text-gray-500' :
-                    typeof value === 'string' ? 'text-emerald-300 break-all' :
-                    typeof value === 'number' ? 'text-amber-300' :
-                    typeof value === 'boolean' ? 'text-sky-300' : 'text-gray-400'
+                    value === null ? 'text-muted' :
+                    typeof value === 'string' ? 'text-info break-all' :
+                    typeof value === 'number' ? 'text-text' :
+                    typeof value === 'boolean' ? 'text-info' : 'text-muted'
                   }>
                     {value === null ? 'null' : typeof value === 'string' ? `"${value}"` : String(value)}
                   </span>
                 </div>
               ))}
               {flat.length > 200 && (
-                <p className="text-gray-700 text-xs mt-2">+{flat.length - 200} more — narrow your search</p>
+                <p className="text-dim text-xs mt-2">+{flat.length - 200} more — narrow your search</p>
               )}
             </div>
           )
@@ -379,7 +379,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
   }
 
   function renderBody(body) {
-    const preCls = 'p-4 text-sm text-gray-300 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed font-mono bg-gray-900/30';
+    const preCls = 'p-4 text-sm text-text overflow-x-auto whitespace-pre-wrap break-words leading-relaxed font-mono bg-surface-raised';
 
     if (rawMode || response?.streaming) {
       return (
@@ -398,7 +398,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       );
     }
 
-    return <pre className={`${preCls} text-gray-200`}>{body || '(empty)'}</pre>;
+    return <pre className={`${preCls} text-text`}>{body || '(empty)'}</pre>;
   }
 
   function copyBody() {
@@ -431,7 +431,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       <div className="p-6 animate-fade-up">
         <div className="flex flex-col gap-2.5 animate-pulse">
           {[75, 55, 85, 65, 45].map((w, i) => (
-            <div key={i} className="h-3 bg-gray-800/80 rounded" style={{ width: `${w}%` }} />
+            <div key={i} className="h-3 bg-surface-raised" style={{ width: `${w}%` }} />
           ))}
         </div>
       </div>
@@ -440,13 +440,16 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
 
   if (!response) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-48 gap-3 select-none pointer-events-none">
-        <div className="flex items-end gap-[3px] h-7 opacity-20">
-          <div className="w-[2px] h-5 bg-gray-400 rounded-full -skew-x-6" />
-          <div className="w-[2px] h-7 bg-gray-300 rounded-full" />
-          <div className="w-[2px] h-5 bg-gray-400 rounded-full skew-x-6" />
+      <div className="flex flex-col items-center justify-center h-full min-h-48 gap-4 select-none pointer-events-none">
+        <svg width="60" height="20" viewBox="0 0 60 20" className="text-accent opacity-70">
+          <circle cx="3" cy="10" r="1.75" fill="currentColor" />
+          <line x1="3" y1="10" x2="40" y2="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.55" />
+          <polygon points="38,3 58,10 38,17" fill="currentColor" />
+        </svg>
+        <div className="text-center">
+          <p className="text-[13.5px] font-medium text-text/85 whitespace-nowrap">No response yet</p>
+          <p className="text-xs text-dim mt-1 max-w-[220px] leading-relaxed">Send a request and the response lands right here.</p>
         </div>
-        <p className="text-[11px] text-gray-700 tracking-widest uppercase font-medium">Awaiting response</p>
       </div>
     );
   }
@@ -455,8 +458,8 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
     return (
       <div className="p-4 animate-fade-up">
         <div className="flex items-start gap-2.5 text-sm">
-          <span className="text-red-500 shrink-0 mt-0.5">⚠</span>
-          <span className="text-red-400">{response.error}</span>
+          <span className="text-error shrink-0 mt-0.5">⚠</span>
+          <span className="text-error">{response.error}</span>
         </div>
       </div>
     );
@@ -478,12 +481,12 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       )}
 
       {pathCopied && (
-        <div className="absolute top-14 right-4 text-xs bg-gray-800 border border-gray-700 rounded-md px-2.5 py-1.5 text-gray-300 z-20 pointer-events-none animate-fade-up shadow-xl">
+        <div className="absolute top-14 right-4 text-xs bg-surface-raised border border-border px-2.5 py-1.5 text-text z-20 pointer-events-none animate-fade-up shadow-xl">
           Path copied
         </div>
       )}
 
-      <div className="flex items-center border-b border-gray-800/50 px-2">
+      <div className="flex items-center border-b border-border-subtle px-2">
         <div className="flex items-center gap-0.5 flex-1 min-w-0">
           {[
             { id: 'body', icon: FileText, label: 'Body' },
@@ -496,13 +499,13 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs transition-colors border-b-2 -mb-px ${
                 activeTab === id
-                  ? 'border-indigo-500 text-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-300'
+                  ? 'border-accent text-text'
+                  : 'border-transparent text-muted hover:text-text'
               }`}
             >
               <Icon size={11} />
               {label}
-              {countVal != null && <span className="ml-0.5 text-gray-600">({countVal})</span>}
+              {countVal != null && <span className="ml-0.5 text-dim">({countVal})</span>}
             </button>
           ))}
         </div>
@@ -511,10 +514,10 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
           {!hideStatusBar && (
             <div className="flex items-center gap-3 mr-2">
               {response.streaming && (
-                <div className="flex items-center gap-1 text-xs text-indigo-400">
+                <div className="flex items-center gap-1 text-xs text-accent">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-indigo-400" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
                   </span>
                   Streaming
                 </div>
@@ -528,24 +531,24 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
                 {response.status} {response.statusText}
               </a>
               <span className={`text-xs tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
-              <span className="text-xs text-gray-500">{formatSize(response.body)}</span>
+              <span className="text-xs text-muted">{formatSize(response.body)}</span>
             </div>
           )}
           <button
             onClick={() => setRawMode(v => !v)}
-            className={`text-xs px-2 py-1 rounded border transition-colors ${rawMode ? 'border-indigo-500/50 text-indigo-400 bg-indigo-500/5' : 'border-gray-700 text-gray-500 hover:text-gray-200 hover:border-gray-500'}`}
+            className={`text-xs px-2 py-1 rounded border transition-colors ${rawMode ? 'border-accent/50 text-accent bg-accent/5' : 'border-border text-muted hover:text-text hover:border-[rgba(242,237,228,.3)]'}`}
           >
             Raw
           </button>
           <button
             onClick={copyBody}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-200 transition-colors px-2 py-1 rounded border border-gray-700 hover:border-gray-500"
+            className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
             <Copy size={11} />{copied ? 'Copied!' : 'Copy'}
           </button>
           <button
             onClick={downloadBody}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-200 transition-colors px-2 py-1 rounded border border-gray-700 hover:border-gray-500"
+            className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
             <Download size={11} />Save
           </button>
@@ -557,7 +560,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       {activeTab === 'headers' && (
         <div className="flex flex-col px-4">
           {headerEntries.length === 0 ? (
-            <p className="text-gray-600 text-sm py-4">No headers</p>
+            <p className="text-dim text-sm py-4">No headers</p>
           ) : (
             headerEntries.map(([key, value]) => <HeaderRow key={key} name={key} value={value} />)
           )}
@@ -567,21 +570,21 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       {activeTab === 'cookies' && (
         <div className="flex flex-col gap-2 px-4 py-2">
           {cookies.length === 0 ? (
-            <p className="text-gray-600 text-sm py-4">No cookies in response</p>
+            <p className="text-dim text-sm py-4">No cookies in response</p>
           ) : cookies.map((c, i) => (
-            <div key={i} className="bg-gray-800/40 rounded-lg p-3 flex flex-col gap-1.5 border border-gray-800/60">
+            <div key={i} className="bg-surface-raised p-3 flex flex-col gap-1.5 border border-border">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-indigo-300 font-semibold">{c.name}</span>
-                <span className="text-xs text-gray-400 font-mono truncate">{c.value || <span className="text-gray-600 italic">empty</span>}</span>
+                <span className="text-xs font-mono text-accent font-semibold">{c.name}</span>
+                <span className="text-xs text-muted font-mono truncate">{c.value || <span className="text-dim italic">empty</span>}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {c.path && <span className="text-xs text-gray-600">Path: <span className="text-gray-400 font-mono">{c.path}</span></span>}
-                {c.domain && <span className="text-xs text-gray-600">Domain: <span className="text-gray-400 font-mono">{c.domain}</span></span>}
-                {c.expires && <span className="text-xs text-gray-600">Expires: <span className="text-gray-400">{c.expires}</span></span>}
-                {c.maxAge && <span className="text-xs text-gray-600">Max-Age: <span className="text-gray-400">{c.maxAge}s</span></span>}
-                {c.sameSite && <span className="text-xs text-gray-600">SameSite: <span className="text-gray-400">{c.sameSite}</span></span>}
-                {c.httpOnly && <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700/80 text-gray-400">HttpOnly</span>}
-                {c.secure && <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700/80 text-gray-400">Secure</span>}
+                {c.path && <span className="text-xs text-dim">Path: <span className="text-muted font-mono">{c.path}</span></span>}
+                {c.domain && <span className="text-xs text-dim">Domain: <span className="text-muted font-mono">{c.domain}</span></span>}
+                {c.expires && <span className="text-xs text-dim">Expires: <span className="text-muted">{c.expires}</span></span>}
+                {c.maxAge && <span className="text-xs text-dim">Max-Age: <span className="text-muted">{c.maxAge}s</span></span>}
+                {c.sameSite && <span className="text-xs text-dim">SameSite: <span className="text-muted">{c.sameSite}</span></span>}
+                {c.httpOnly && <span className="text-xs px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">HttpOnly</span>}
+                {c.secure && <span className="text-xs px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">Secure</span>}
               </div>
             </div>
           ))}
@@ -592,23 +595,23 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
         <div className="flex flex-col gap-4 px-4 py-3">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Total (server round-trip)</span>
+              <span className="text-xs text-muted">Total (server round-trip)</span>
               <span className={`text-sm font-mono font-semibold ${latencyColor(response.time)}`}>{response.time}ms</span>
             </div>
-            <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[rgba(242,237,228,.08)] overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${timingBarColor(response.time)}`}
+                className={`h-full transition-all duration-500 ${timingBarColor(response.time)}`}
                 style={{ width: `${Math.min(100, (response.time / 3000) * 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-700">
+            <div className="flex justify-between text-xs text-dim">
               <span>0ms</span>
-              <span className="text-green-700">200ms</span>
-              <span className="text-yellow-700">1s</span>
-              <span className="text-red-700">3s+</span>
+              <span className="text-success/60">200ms</span>
+              <span className="text-warning/60">1s</span>
+              <span className="text-error/60">3s+</span>
             </div>
           </div>
-          <p className="text-xs text-gray-700">Measures proxy-side fetch time. Does not include client↔server transit.</p>
+          <p className="text-xs text-dim">Measures proxy-side fetch time. Does not include client↔server transit.</p>
         </div>
       )}
     </div>

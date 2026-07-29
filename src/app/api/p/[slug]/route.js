@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getClientIp, rateLimit, tooManyRequests } from '@/lib/db';
 
-export async function GET(_req, { params }) {
+export async function GET(req, { params }) {
+  if (!await rateLimit(`read:${getClientIp(req)}`, { limit: 60, window: 60 })) return tooManyRequests();
   const { slug } = await params;
   const supabase = createServerClient();
   const { data, error } = await supabase

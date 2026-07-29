@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
-  PanelLeftClose, PanelLeftOpen, FolderOpen, Clock,
+  PanelLeftOpen, FolderOpen, Clock,
   ChevronRight, Trash2, MoreHorizontal, Pencil, Ban, Search, X, Check,
 } from 'lucide-react';
-import { methodBadgeClass, methodBorderClass, fuzzyScore, extractGroup, scoreAndFilterSaved } from '@/lib/utils';
+import { methodColor, fuzzyScore, extractGroup, scoreAndFilterSaved } from '@/lib/utils';
+import { suggestName } from '@/lib/saved';
 import { SIDEBAR_TAB_KEY } from '@/lib/constants';
 import Hl from '@/components/Hl';
 import MiddleTruncate from '@/components/MiddleTruncate';
@@ -36,43 +37,43 @@ function ContextMenu({ entry, allCollections, position, onClose, onOpen, onRenam
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed z-50 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1 w-56 text-sm" style={{ left, top: position.y }}>
+      <div className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-56 text-sm" style={{ left, top: position.y }}>
         {mode === 'main' ? (
           <>
-            <button onClick={onOpen} className="w-full text-left px-3 py-1.5 text-gray-200 hover:bg-gray-800 transition-colors">Open</button>
-            <div className="border-t border-gray-800 my-1" />
-            <button onClick={onRename} className="w-full text-left px-3 py-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">Rename</button>
-            <button onClick={() => setMode('move')} className="w-full text-left px-3 py-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors flex items-center justify-between">
-              Move to collection <ChevronRight size={12} className="text-gray-600" />
+            <button onClick={onOpen} className="w-full text-left px-3 py-1.5 text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">Open</button>
+            <div className="border-t border-border my-1" />
+            <button onClick={onRename} className="w-full text-left px-3 py-1.5 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">Rename</button>
+            <button onClick={() => setMode('move')} className="w-full text-left px-3 py-1.5 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center justify-between">
+              Move to collection <ChevronRight size={12} className="text-dim" />
             </button>
-            <button onClick={onDuplicate} className="w-full text-left px-3 py-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">Duplicate</button>
-            <button onClick={onCopyLink} className="w-full text-left px-3 py-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">Copy share link</button>
-            <div className="border-t border-gray-800 my-1" />
-            <button onClick={onDelete} className="w-full text-left px-3 py-1.5 text-red-400 hover:text-red-300 hover:bg-gray-800 transition-colors">Delete</button>
+            <button onClick={onDuplicate} className="w-full text-left px-3 py-1.5 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">Duplicate</button>
+            <button onClick={onCopyLink} className="w-full text-left px-3 py-1.5 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">Copy share link</button>
+            <div className="border-t border-border my-1" />
+            <button onClick={onDelete} className="w-full text-left px-3 py-1.5 text-error hover:text-error hover:bg-[rgba(242,237,228,.06)] transition-colors">Delete</button>
           </>
         ) : (
           <>
-            <button onClick={() => setMode('main')} className="w-full text-left px-3 py-1.5 text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors flex items-center gap-1.5">
+            <button onClick={() => setMode('main')} className="w-full text-left px-3 py-1.5 text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-1.5">
               <ChevronRight size={10} className="rotate-180 shrink-0" /> Move to collection
             </button>
-            <div className="border-t border-gray-800 my-1" />
+            <div className="border-t border-border my-1" />
             <div className="px-2 pb-1">
-              <input ref={moveRef} className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-xs placeholder-gray-600 focus:outline-none focus:border-gray-500"
+              <input ref={moveRef} className="w-full bg-surface-raised border border-border px-2.5 py-1.5 text-xs placeholder-dim focus:outline-none focus:border-[rgba(242,237,228,.3)]"
                 placeholder="Collection name…" value={moveInput} onChange={e => setMoveInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && moveInput.trim()) { onMove(moveInput.trim()); onClose(); } e.stopPropagation(); }} />
             </div>
             {otherCollections.length > 0 && (
-              <div className="max-h-36 overflow-y-auto border-t border-gray-800 pt-1">
+              <div className="max-h-36 overflow-y-auto border-t border-border pt-1">
                 {otherCollections.map(c => (
-                  <button key={c} onClick={() => { onMove(c); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors font-mono truncate">{c}</button>
+                  <button key={c} onClick={() => { onMove(c); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors font-mono truncate">{c}</button>
                 ))}
               </div>
             )}
             {!moveInput && !otherCollections.length && (
-              <p className="px-3 py-2 text-xs text-gray-600 italic border-t border-gray-800">Type a name to create a new collection</p>
+              <p className="px-3 py-2 text-xs text-dim italic border-t border-border">Type a name to create a new collection</p>
             )}
             {moveInput.trim() && !inputMatchesExisting && (
-              <button onClick={() => { onMove(moveInput.trim()); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-gray-800 transition-colors border-t border-gray-800">
+              <button onClick={() => { onMove(moveInput.trim()); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-accent hover:text-accent-hover hover:bg-[rgba(242,237,228,.06)] transition-colors border-t border-border-subtle">
                 Create &ldquo;{moveInput.trim()}&rdquo;
               </button>
             )}
@@ -85,10 +86,24 @@ function ContextMenu({ entry, allCollections, position, onClose, onOpen, onRenam
 
 function SkeletonRow({ children }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-800/40 animate-pulse">
-      <div className="w-8 h-2.5 bg-gray-800 rounded shrink-0" />
+    <div className="flex items-center gap-2.5 py-2 animate-pulse">
+      <div className="w-8 h-2.5 bg-[rgba(242,237,228,.06)] shrink-0" />
       {children}
     </div>
+  );
+}
+
+function TrajectoryNote() {
+  return (
+    <>
+      <div className="h-px bg-border-subtle my-1.5" />
+      <div className="pb-4">
+        <p className="text-[10.5px] uppercase tracking-[0.09em] text-dim mb-2">Trajectory</p>
+        <p className="text-xs text-muted leading-[1.6]">
+          Every call takes the same path: aim, loose, then land. Nothing hidden in between.
+        </p>
+      </div>
+    </>
   );
 }
 
@@ -106,23 +121,24 @@ function GroupHeader({ name, count, collapsed, onToggle, onRename }) {
   }
 
   return (
-    <div className="flex items-center px-2 py-1 bg-gray-900 sticky top-0 z-10 group/header border-b border-gray-800/50">
-      <button onClick={onToggle} className="shrink-0 mr-1 text-gray-600 hover:text-gray-400 transition-colors p-0.5 rounded">
+    <div className="flex items-center pt-4 pb-2 bg-surface sticky top-0 z-10 group/header">
+      <button onClick={onToggle} title={collapsed ? 'Expand collection' : 'Collapse collection'}
+        className="shrink-0 -ml-1 mr-0.5 text-dim opacity-0 group-hover/header:opacity-100 hover:text-text transition-all p-0.5">
         <ChevronRight size={9} className={`transition-transform ${collapsed ? '' : 'rotate-90'}`} />
       </button>
       {renaming ? (
         <input ref={inputRef} value={value} onChange={e => setValue(e.target.value)} onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setValue(name); setRenaming(false); } e.stopPropagation(); }}
-          className="flex-1 min-w-0 bg-gray-800 border border-gray-600 rounded px-1.5 py-0.5 text-xs text-gray-200 focus:outline-none focus:border-indigo-500" />
+          className="flex-1 min-w-0 bg-surface-raised border border-border px-1.5 py-0.5 text-xs text-text focus:outline-none focus:border-accent" />
       ) : (
-        <button onClick={onToggle} className="flex-1 min-w-0 text-left py-0.5">
-          <MiddleTruncate text={name} className="text-xs text-gray-600 font-mono" />
+        <button onClick={onToggle} className="flex-1 min-w-0 text-left">
+          <MiddleTruncate text={name.toUpperCase()} className="text-[10.5px] uppercase tracking-[0.09em] text-dim" />
         </button>
       )}
-      <span className="text-xs text-gray-700 mx-1 shrink-0">{count}</span>
+      <span className="text-[10.5px] text-dim mx-1.5 shrink-0 tabular-nums">{count}</span>
       {!renaming && (
         <button onClick={() => setRenaming(true)} title="Rename collection"
-          className="opacity-0 group-hover/header:opacity-100 text-gray-600 hover:text-gray-300 transition-all p-0.5 shrink-0 rounded">
+          className="opacity-0 group-hover/header:opacity-100 text-dim hover:text-text transition-all p-0.5 shrink-0">
           <Pencil size={9} />
         </button>
       )}
@@ -248,43 +264,50 @@ export default function Sidebar({
     const focused = entry.id === focusedId;
     const isActive = entry.id === activeRequestId;
     const path = extractPath(entry.url);
+    // An untouched auto-name just repeats the host already shown in the group
+    // header, so prefer the path — but the moment someone renames a request,
+    // their name wins.
+    const autoNamed = entry.name === suggestName(entry.url);
+    const label = autoNamed && path && path !== '/' ? path : entry.name;
     return (
       <div key={entry.id} data-entry-id={entry.id}
-        className={`flex items-center gap-0.5 pl-3 pr-2 py-1.5 border-b border-gray-800/40 last:border-0 transition-colors group/row border-l-2 ${
-          isActive ? `${methodBorderClass(entry.method)} bg-gray-800/60` :
-          focused ? 'border-l-transparent bg-gray-800/50' :
-          'border-l-transparent hover:bg-gray-800/40'
+        className={`qv-row relative flex items-center pr-1.5 transition-colors group/row ${
+          isActive ? 'qv-row-active bg-surface-raised' :
+          focused ? 'bg-surface-raised' :
+          'hover:bg-surface-raised'
         }`}
         onMouseEnter={() => setFocusedId(entry.id)}>
-        <button onClick={() => { onRestoreSaved(entry); setSearch(''); setFocusedId(null); }} className="flex items-center gap-1.5 flex-1 text-left min-w-0">
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${methodBadgeClass(entry.method)}`}>{entry.method}</span>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs text-gray-200 truncate">
-              {entry.nameIndices ? <Hl text={entry.name} indices={entry.nameIndices} /> : entry.name}
-            </span>
-            {showUrl ? (
-              entry.urlIndices?.length ? (
-                <span className="text-xs text-gray-500 truncate font-mono">
+        <span className="qv-nock" />
+        {/* Padding lives on the button, not the row, so the whole row area is clickable */}
+        <button onClick={() => { onRestoreSaved(entry); setSearch(''); setFocusedId(null); }} className="flex items-center gap-2.5 flex-1 text-left min-w-0 pl-3.5 py-2">
+          <span className={`text-[11px] font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
+          {showUrl ? (
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className={`text-[13px] truncate ${isActive ? 'text-text' : 'text-soft'}`}>
+                {entry.nameIndices ? <Hl text={entry.name} indices={entry.nameIndices} /> : entry.name}
+              </span>
+              {entry.urlIndices?.length ? (
+                <span className="text-xs text-muted truncate font-mono">
                   <Hl text={entry.url} indices={entry.urlIndices} />
                 </span>
               ) : (
-                <MiddleTruncate text={entry.url} className="text-xs text-gray-500 font-mono" />
-              )
-            ) : path && path !== '/' ? (
-              <MiddleTruncate text={path} className="text-xs text-gray-600 font-mono" />
-            ) : null}
-          </div>
+                <MiddleTruncate text={entry.url} className="text-xs text-muted font-mono" />
+              )}
+            </div>
+          ) : (
+            <MiddleTruncate text={label} className={`text-[13px] min-w-0 ${isActive ? 'text-text' : 'text-soft'}`} />
+          )}
         </button>
         <button onClick={e => { e.stopPropagation(); handleDeleteClick(entry.id); }}
           title={confirmDeleteId === entry.id ? 'Click again to confirm' : 'Delete'}
           aria-label={confirmDeleteId === entry.id ? `Confirm delete ${entry.name}` : `Delete ${entry.name}`}
           className={`transition-all p-1 shrink-0 rounded ${confirmDeleteId === entry.id
-            ? 'opacity-100 text-red-400 bg-red-500/10'
-            : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-gray-600 hover:text-red-400'}`}>
+            ? 'opacity-100 text-error bg-error/10'
+            : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-dim hover:text-error'}`}>
           {confirmDeleteId === entry.id ? <Check size={11} /> : <Trash2 size={11} />}
         </button>
         <button onClick={e => openMenu(e, entry)} title="More" aria-label={`More actions for ${entry.name}`}
-          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-gray-500 hover:text-gray-200 transition-all p-1 shrink-0 rounded hover:bg-gray-700">
+          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-muted hover:text-text transition-all p-1 shrink-0 rounded hover:bg-[rgba(242,237,228,.06)]">
           <MoreHorizontal size={12} />
         </button>
       </div>
@@ -293,25 +316,25 @@ export default function Sidebar({
 
   if (collapsed && !mobileOpen) {
     return (
-      <div className="hidden md:flex flex-col w-10 border-r border-gray-800/60 bg-gray-900 shrink-0 items-center pt-3 gap-1">
-        <button onClick={onToggle} title="Expand sidebar" className="text-gray-700 hover:text-gray-400 transition-all p-2 rounded-md hover:bg-gray-800 hover:scale-110">
+      <div className="hidden md:flex flex-col w-10 border-r border-border-subtle bg-surface shrink-0 items-center pt-3 gap-1">
+        <button onClick={onToggle} title="Expand sidebar" className="text-dim hover:text-text transition-all p-2 rounded-md hover:bg-[rgba(242,237,228,.06)] hover:scale-110">
           <PanelLeftOpen size={13} />
         </button>
-        <div className="w-4 h-px bg-gray-800 my-1" />
-        <button onClick={() => { setTab('collections'); onToggle(); }} title="Collections" className="text-gray-700 hover:text-gray-300 transition-all p-2 rounded-md hover:bg-gray-800 relative">
+        <div className="w-4 h-px bg-border-subtle my-1" />
+        <button onClick={() => { setTab('collections'); onToggle(); }} title="Collections" className="text-dim hover:text-text transition-all p-2 rounded-md hover:bg-[rgba(242,237,228,.06)] relative">
           <FolderOpen size={12} />
-          {activeTab === 'collections' && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-500" />}
+          {activeTab === 'collections' && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />}
         </button>
-        <button onClick={() => { setTab('history'); onToggle(); }} title="History" className="text-gray-700 hover:text-gray-300 transition-all p-2 rounded-md hover:bg-gray-800 relative">
+        <button onClick={() => { setTab('history'); onToggle(); }} title="History" className="text-dim hover:text-text transition-all p-2 rounded-md hover:bg-[rgba(242,237,228,.06)] relative">
           <Clock size={12} />
-          {activeTab === 'history' && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-500" />}
+          {activeTab === 'history' && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />}
         </button>
       </div>
     );
   }
 
   return (
-    <div className={`${mobileOpen ? 'flex w-full' : 'hidden md:flex md:w-60'} flex-col border-r border-gray-800 bg-gray-900 shrink-0 overflow-hidden`}>
+    <div className={`${mobileOpen ? 'flex w-full' : 'hidden md:flex md:w-72 lg:w-80'} flex-col border-r border-border-subtle bg-surface shrink-0 overflow-hidden`}>
       {menu && (
         <ContextMenu
           entry={menu.entry}
@@ -328,63 +351,61 @@ export default function Sidebar({
       )}
 
       {/* Tab bar */}
-      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-gray-800/50 shrink-0">
+      <div className="flex items-center gap-4 px-4 pt-4 pb-2.5 border-b border-border-subtle shrink-0">
         <button
           onClick={() => setTab('collections')}
-          className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors rounded-md ${activeTab === 'collections' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-[13px] transition-colors border-b-2 ${activeTab === 'collections' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
         >
-          <FolderOpen size={11} />
           Collections
-          {saved.length > 0 && <span className="text-gray-600 text-xs">{saved.length}</span>}
+          {saved.length > 0 && <span className="text-dim">· {saved.length}</span>}
         </button>
         <button
           onClick={() => setTab('history')}
-          className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors rounded-md ${activeTab === 'history' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-400'}`}
+          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-[13px] transition-colors border-b-2 ${activeTab === 'history' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
         >
-          <Clock size={11} />
           History
-          {history.length > 0 && <span className="text-gray-600 text-xs">{history.length}</span>}
+          {history.length > 0 && <span className="text-dim">· {history.length}</span>}
         </button>
-        <div className="flex-1" />
-        <button onClick={onToggle} title="Collapse sidebar" className="text-gray-700 hover:text-gray-300 transition-all p-1.5 rounded-md hover:bg-gray-800 hover:scale-110 shrink-0">
-          <PanelLeftClose size={13} />
+        <button onClick={onToggle} title="Collapse sidebar" aria-label="Collapse sidebar"
+          className="qv-ghost-btn ml-auto shrink-0 w-[22px] h-[22px] flex items-center justify-center text-[11px] leading-none text-muted">
+          ⟨
         </button>
       </div>
 
       {activeTab === 'collections' && (
         <div className="flex flex-col overflow-hidden flex-1">
-          <div className="p-2 border-b border-gray-800 flex gap-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1">
-              <Search size={10} className="text-gray-600 shrink-0" />
+          <div className="px-4 pt-3 flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0 bg-surface-raised border border-border px-2.5 py-2">
+              <Search size={11} className="text-dim shrink-0" />
               <input
-                className="flex-1 bg-transparent text-xs placeholder-gray-600 focus:outline-none text-gray-200 min-w-0"
-                placeholder="Search…"
+                className="flex-1 bg-transparent text-[13px] placeholder-dim focus:outline-none text-text min-w-0"
+                placeholder="Search requests…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setFocusedId(null); }}
                 onKeyDown={handleSearchKeyDown}
               />
             </div>
             {saved.length > 0 && (
-              <button onClick={onClearAllSaved} title="Clear all saved" className="text-gray-600 hover:text-red-400 transition-colors p-1 shrink-0">
+              <button onClick={onClearAllSaved} title="Clear all saved" className="text-dim hover:text-error transition-colors p-1 shrink-0">
                 <Ban size={12} />
               </button>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto" ref={listRef}>
+          <div className="flex-1 overflow-y-auto px-4" ref={listRef}>
             {loading ? (
               [0,1,2,3].map(i => (
                 <SkeletonRow key={i}>
                   <div className="flex flex-col gap-1.5 flex-1">
-                    <div className="h-2.5 bg-gray-800 rounded w-3/4" />
-                    <div className="h-2 bg-gray-800/50 rounded w-1/2" />
+                    <div className="h-2.5 bg-[rgba(242,237,228,.06)] w-3/4" />
+                    <div className="h-2 bg-[rgba(242,237,228,.04)] w-1/2" />
                   </div>
                 </SkeletonRow>
               ))
             ) : saved.length === 0 ? (
-              <p className="text-xs text-gray-600 p-3">No saved requests yet</p>
+              <p className="text-xs text-dim py-4">No saved requests yet</p>
             ) : search ? (
               filtered.length === 0
-                ? <p className="text-xs text-gray-600 p-3">No matches</p>
+                ? <p className="text-xs text-dim py-4">No matches</p>
                 : filtered.map(e => renderSavedRow(e, true))
             ) : (
               groups.map(([groupName, entries]) => (
@@ -396,69 +417,73 @@ export default function Sidebar({
                     onToggle={() => toggleGroup(groupName)}
                     onRename={newName => onRenameCollection(groupName, newName)}
                   />
-                  {!collapsedGroups.has(groupName) && entries.map(e => renderSavedRow(e, false))}
+                  {!collapsedGroups.has(groupName) && (
+                    <div className="flex flex-col gap-px">{entries.map(e => renderSavedRow(e, false))}</div>
+                  )}
                 </div>
               ))
             )}
+            <TrajectoryNote />
           </div>
         </div>
       )}
 
       {activeTab === 'history' && (
         <div className="flex flex-col overflow-hidden flex-1">
-          <div className="p-2 border-b border-gray-800 flex gap-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1">
-              <Search size={10} className="text-gray-600 shrink-0" />
+          <div className="px-4 pt-3 flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0 bg-surface-raised border border-border px-2.5 py-2">
+              <Search size={11} className="text-dim shrink-0" />
               <input
-                className="flex-1 bg-transparent text-xs placeholder-gray-600 focus:outline-none text-gray-200 min-w-0"
+                className="flex-1 bg-transparent text-[13px] placeholder-dim focus:outline-none text-text min-w-0"
                 placeholder="Filter by URL or method…"
                 value={historySearch}
                 onChange={e => setHistorySearch(e.target.value)}
               />
             </div>
             {history.length > 0 && (
-              <button onClick={onClearHistory} title="Clear history" className="text-gray-600 hover:text-red-400 transition-colors p-1 shrink-0">
+              <button onClick={onClearHistory} title="Clear history" className="text-dim hover:text-error transition-colors p-1 shrink-0">
                 <Ban size={12} />
               </button>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-4 pt-3">
             {loading ? (
               [0,1,2,3].map(i => (
                 <SkeletonRow key={i}>
-                  <div className="h-2.5 bg-gray-800 rounded flex-1" />
-                  <div className="w-6 h-2.5 bg-gray-800 rounded shrink-0" />
+                  <div className="h-2.5 bg-[rgba(242,237,228,.06)] flex-1" />
+                  <div className="w-6 h-2.5 bg-[rgba(242,237,228,.06)] shrink-0" />
                 </SkeletonRow>
               ))
             ) : history.length === 0 ? (
-              <p className="text-xs text-gray-600 p-3">No history yet</p>
+              <p className="text-xs text-dim py-4">No history yet</p>
             ) : filteredHistory.length === 0 ? (
-              <p className="text-xs text-gray-600 p-3">No matches</p>
+              <p className="text-xs text-dim py-4">No matches</p>
             ) : filteredHistory.map(entry => (
-              <div key={entry.id} className="flex items-center group/hrow border-b border-gray-800/40 last:border-0 hover:bg-gray-800/60 transition-colors">
+              <div key={entry.id} className="flex items-center group/hrow hover:bg-surface-raised transition-colors">
                 <button onClick={() => onRestoreHistory(entry)}
-                  className="flex items-center gap-2 px-3 py-2 flex-1 min-w-0 text-left">
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${methodBadgeClass(entry.method)}`}>{entry.method}</span>
+                  className="flex items-center gap-2.5 pl-3.5 pr-1 py-2 flex-1 min-w-0 text-left">
+                  <span className={`text-[11px] font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
                   {entry.urlHl?.length ? (
-                    <span className="text-xs text-gray-400 truncate flex-1 font-mono">
+                    <span className="text-xs text-soft truncate flex-1 font-mono">
                       <Hl text={entry.url} indices={entry.urlHl} />
                     </span>
                   ) : (
-                    <MiddleTruncate text={entry.url} className="text-xs text-gray-400 flex-1 font-mono" />
+                    <MiddleTruncate text={entry.url} className="text-xs text-soft flex-1 font-mono" />
                   )}
                   {entry.status && (
-                    <span className={`text-xs shrink-0 ${entry.status < 300 ? 'text-green-400' : 'text-orange-400'}`}>{entry.status}</span>
+                    <span className={`text-xs shrink-0 ${entry.status < 300 ? 'text-success' : 'text-warning'}`}>{entry.status}</span>
                   )}
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); onDeleteHistory?.(entry.id); }}
                   title="Remove"
-                  className="opacity-0 group-hover/hrow:opacity-100 text-gray-600 hover:text-red-400 transition-all p-2 shrink-0"
+                  className="opacity-0 group-hover/hrow:opacity-100 text-dim hover:text-error transition-all p-2 shrink-0"
                 >
                   <X size={11} />
                 </button>
               </div>
             ))}
+            <TrajectoryNote />
           </div>
         </div>
       )}

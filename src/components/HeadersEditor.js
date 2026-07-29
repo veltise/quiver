@@ -40,37 +40,43 @@ export default function HeadersEditor({ headers, onChange }) {
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-gray-800 bg-gray-800/40 rounded-t">
-        <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium px-1.5 py-1">Key</span>
-        <div className="flex items-center justify-between px-1.5 border-l border-gray-800">
-          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium py-1">Value</span>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10.5px] uppercase tracking-[0.09em] text-dim">Request headers</span>
+        <div className="flex items-center gap-3">
           {headers.length > 0 && (
             <button
               onClick={() => onChange([])}
               title="Clear all headers"
               aria-label="Clear all headers"
-              className="text-gray-700 hover:text-red-400 transition-colors"
+              className="text-dim hover:text-error transition-colors"
             >
-              <Ban size={10} />
+              <Ban size={11} />
             </button>
           )}
+          <button onClick={() => add('key')} className="text-xs text-accent hover:text-accent-hover transition-colors">
+            + Add header
+          </button>
         </div>
+      </div>
+      <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border">
+        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Key</span>
+        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Value</span>
       </div>
       {headers.map(h => (
         <div
           key={h.id}
-          className={`grid grid-cols-[1fr_1fr_1.25rem] border-b border-gray-800/40 last:border-0 group/row hover:bg-gray-800/30 ${h.id === lastAdded ? 'animate-row-in' : ''}`}
+          className={`grid grid-cols-[1fr_1fr_1.25rem] border-b border-border-subtle last:border-0 group/row hover:bg-[rgba(242,237,228,.04)] ${h.id === lastAdded ? 'animate-row-in' : ''}`}
         >
           <input
             ref={h.id === lastAdded ? keyRef : undefined}
-            className="bg-transparent px-1.5 py-1.5 text-xs font-mono text-gray-200 placeholder-gray-600 focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full"
             placeholder="key"
             value={h.key}
             onChange={e => update(h.id, 'key', e.target.value)}
           />
           <input
             ref={h.id === lastAdded ? valueRef : undefined}
-            className="bg-transparent px-1.5 py-1.5 text-xs font-mono text-gray-200 placeholder-gray-600 focus:outline-none w-full border-l border-gray-800/60"
+            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full "
             placeholder="value"
             value={h.value}
             onChange={e => update(h.id, 'value', e.target.value)}
@@ -78,7 +84,7 @@ export default function HeadersEditor({ headers, onChange }) {
           <button
             onClick={() => remove(h.id)}
             aria-label="Remove header"
-            className="flex items-center justify-center text-transparent group-hover/row:text-gray-600 hover:!text-red-400 transition-colors"
+            className="flex items-center justify-center text-transparent group-hover/row:text-text hover:!text-error transition-colors"
           >
             <X size={10} />
           </button>
@@ -86,9 +92,9 @@ export default function HeadersEditor({ headers, onChange }) {
       ))}
       {headers.length === 0 && (
         /* Ghost placeholder row — becomes a real row on focus */
-        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-gray-800/40 opacity-50 focus-within:opacity-100">
+        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border opacity-50 focus-within:opacity-100">
           <input
-            className="bg-transparent px-1.5 py-1.5 text-xs font-mono placeholder-gray-600 focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
             placeholder="key"
             aria-label="Header name"
             value=""
@@ -97,7 +103,7 @@ export default function HeadersEditor({ headers, onChange }) {
             readOnly
           />
           <input
-            className="bg-transparent px-1.5 py-1.5 text-xs font-mono placeholder-gray-600 focus:outline-none w-full border-l border-gray-800/60"
+            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full "
             placeholder="value"
             aria-label="Header value"
             value=""
@@ -108,12 +114,6 @@ export default function HeadersEditor({ headers, onChange }) {
           <span />
         </div>
       )}
-      <button
-        onClick={() => add('key')}
-        className="text-xs text-gray-600 hover:text-gray-300 active:text-white transition-colors px-1.5 py-1.5 text-left"
-      >
-        + Add header
-      </button>
     </div>
   );
 }
