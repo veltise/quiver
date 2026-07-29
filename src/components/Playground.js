@@ -30,6 +30,9 @@ import PulsingDot from './PulsingDot';
 import { ENV_SETS_KEY, TIMEOUT_KEY, SIDEBAR_KEY } from '@/lib/constants';
 import { getSessionId } from '@/lib/session';
 const VALID_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
+// How long a chunked response gets to finish before we switch to showing it
+// stream in progressively. See the streaming branch in send().
+const STREAM_REVEAL_MS = 250;
 const HDR_BTN = 'text-sm px-4 py-2 border border-[rgba(242,237,228,.14)] hover:border-[rgba(242,237,228,.4)] hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors font-medium';
 const MAX_TABS = 10;
 
@@ -445,14 +448,33 @@ export default function Playground({ initialState, isShared }) {
         const time = parseInt(res.headers.get('x-proxy-time') ?? '0');
         let resHeaders = {};
         try { resHeaders = JSON.parse(atob(res.headers.get('x-proxy-headers') ?? 'e30=')); } catch {}
-        updateTab(tabId, { isLoading: false, response: { status, statusText, time, headers: resHeaders, body: '', streaming: true }, respondedAt: Date.now() });
+        const meta = { status, statusText, time, headers: resHeaders };
+
+        // Most JSON APIs reply Transfer-Encoding: chunked, so they take this
+        // path even though they finish almost instantly. Showing the raw
+        // progressive <pre> right away would flash unstyled text before the
+        // JSON tree replaces it. Hold the loading state briefly: if the body
+        // lands inside the window the user goes straight from loading to the
+        // rendered tree, and only a genuinely slow stream reveals progressively.
+        let revealed = false;
+        let latest = '';
+        function revealStream() {
+          if (revealed) return;
+          revealed = true;
+          updateTab(tabId, { isLoading: false, response: { ...meta, body: latest, streaming: true } });
+        }
+        const revealTimer = setTimeout(revealStream, STREAM_REVEAL_MS);
+
         let body = '';
         try {
           body = await readStreamBody(res.body, (accumulated) => {
+            latest = accumulated;
+            if (!revealed) return;
             setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.id === tabId ? { ...t, response: { ...t.response, body: accumulated, streaming: true } } : t) }));
           });
         } catch {}
-        setTabState(prev => ({ ...prev, tabs: prev.tabs.map(t => t.id === tabId ? { ...t, response: { ...t.response, body, streaming: false } } : t) }));
+        clearTimeout(revealTimer);
+        updateTab(tabId, { isLoading: false, response: { ...meta, body, streaming: false }, respondedAt: Date.now() });
         saveToHistory({ id: crypto.randomUUID(), method: capturedReq.method, url: capturedReq.url, status, timestamp: Date.now(), state: capturedReq });
         return;
       }

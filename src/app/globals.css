@@ -112,10 +112,17 @@ button:not([disabled]):active {
   clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 80%);
 }
 
-/* Focus ring — accent, never the browser default blue. */
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
+/* Focus ring — accent, never the browser default blue.
+   Must live in @layer base: unlayered rules beat Tailwind's layered utilities
+   no matter the specificity, so an unlayered version here silently overrode
+   every `focus:outline-none` in the app — including inputs whose wrapper draws
+   the focus state instead, where an `overflow-hidden` parent clipped the ring
+   into a stray sliver. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
 }
 
 @theme {

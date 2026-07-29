@@ -43,7 +43,9 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
       {/* ref wraps both the bar AND the dropdown so outside-click works correctly.
           The dropdown must be a sibling of overflow-hidden, not inside it. */}
       <div ref={methodRef} className="relative flex-1 min-w-0">
-        <div className="flex h-11 w-full border border-border bg-surface-raised focus-within:border-[rgba(242,237,228,.3)] overflow-hidden transition-colors">
+        {/* Focus ring goes on the wrapper, not the inner input — the input's own
+            outline would be clipped by overflow-hidden. */}
+        <div className="flex h-11 w-full border border-border bg-surface-raised overflow-hidden transition-colors focus-within:outline-2 focus-within:outline-accent focus-within:outline-offset-1">
           <div className="relative shrink-0 border-r border-border flex items-center transition-colors">
             <button
               type="button"
