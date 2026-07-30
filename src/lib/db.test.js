@@ -55,10 +55,28 @@ describe('getClientIp', () => {
     expect(a).toBe(b);
   });
 
-  it('uses the first entry of x-forwarded-for (the original client), not the last', () => {
-    const first = getClientIp(mockRequest({ 'x-forwarded-for': '9.9.9.9' }));
-    const chain = getClientIp(mockRequest({ 'x-forwarded-for': '9.9.9.9, 10.0.0.1, 10.0.0.2' }));
-    expect(first).toBe(chain);
+  it('prefers x-vercel-forwarded-for over everything else', () => {
+    const a = getClientIp(mockRequest({ 'x-vercel-forwarded-for': '1.1.1.1' }));
+    const b = getClientIp(mockRequest({
+      'x-vercel-forwarded-for': '1.1.1.1',
+      'x-real-ip': '2.2.2.2',
+      'x-forwarded-for': '3.3.3.3',
+    }));
+    expect(a).toBe(b);
+  });
+
+  // Regression: reading xff[0] let a client pick its own rate-limit bucket, since
+  // the edge appends to a client-supplied header rather than replacing it.
+  it('uses the LAST entry of x-forwarded-for, so a client-prepended value is ignored', () => {
+    const nearestProxy = getClientIp(mockRequest({ 'x-forwarded-for': '10.0.0.2' }));
+    const spoofed = getClientIp(mockRequest({ 'x-forwarded-for': '9.9.9.9, 10.0.0.1, 10.0.0.2' }));
+    expect(spoofed).toBe(nearestProxy);
+  });
+
+  it('a rotating client-supplied x-forwarded-for cannot change the bucket', () => {
+    const a = getClientIp(mockRequest({ 'x-forwarded-for': 'evil-1, 10.0.0.9' }));
+    const b = getClientIp(mockRequest({ 'x-forwarded-for': 'evil-2, 10.0.0.9' }));
+    expect(a).toBe(b);
   });
 
   it('falls back to 127.0.0.1 when no IP headers are present', () => {

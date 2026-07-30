@@ -50,7 +50,6 @@ export async function POST(req) {
     }
 
     const response = await fetch(url, fetchOptions);
-    clearTimeout(tid);
 
     const elapsed = Date.now() - start;
 
@@ -64,19 +63,39 @@ export async function POST(req) {
     // Stream SSE responses and chunked text responses (no Content-Length)
     if (contentType.includes('text/event-stream') || (isChunked && isTextMime)) {
       const stream = new ReadableStream({
-        async start(controller) {
+        async start(streamController) {
           const reader = response.body.getReader();
+          let received = 0;
           try {
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
-              controller.enqueue(value);
+              // MAX_RESPONSE_BYTES is checked against Content-Length further down,
+              // but "chunked" means there is no Content-Length — so without this
+              // count the cap wouldn't apply to the majority of real responses.
+              received += value.byteLength;
+              if (received > MAX_RESPONSE_BYTES) {
+                await reader.cancel();
+                streamController.error(new Error('Response too large'));
+                return;
+              }
+              streamController.enqueue(value);
             }
+            streamController.close();
           } catch (e) {
-            controller.error(e);
+            // Not in a finally: close() on an already-errored stream throws, and
+            // the original code did exactly that on every failure path.
+            streamController.error(e);
           } finally {
-            controller.close();
+            // The abort timer has to outlive fetch() here — pumping the body is
+            // where a slow stream actually spends its time, so clearing it as
+            // soon as the headers arrived left the read loop unbounded.
+            clearTimeout(tid);
           }
+        },
+        cancel() {
+          clearTimeout(tid);
+          controller.abort();
         },
       });
 
@@ -95,10 +114,15 @@ export async function POST(req) {
     // Guard against huge non-streaming responses
     const contentLength = parseInt(response.headers.get('content-length') ?? '0', 10);
     if (contentLength > MAX_RESPONSE_BYTES) {
+      clearTimeout(tid);
       return NextResponse.json({ error: `Response too large (>${MAX_RESPONSE_BYTES / 1024 / 1024} MB)` }, { status: 413 });
     }
 
+    // Timer stays armed across the body read — a server that dribbles out bytes
+    // below the size cap would otherwise hold the function open indefinitely.
     const text = await response.text();
+    clearTimeout(tid);
+
     if (Buffer.byteLength(text) > MAX_RESPONSE_BYTES) {
       return NextResponse.json({ error: `Response too large (>${MAX_RESPONSE_BYTES / 1024 / 1024} MB)` }, { status: 413 });
     }

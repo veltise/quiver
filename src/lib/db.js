@@ -12,6 +12,17 @@ export function isValidSessionId(id) {
   return typeof id === 'string' && UUID_RE.test(id);
 }
 
+// Refuse to start unsalted in production rather than degrade quietly. There are
+// only ~4.3 billion IPv4 addresses, so an unsalted sha256(ip) can be reversed by
+// exhaustive search in seconds — "we hash IPs" would still be technically true
+// and completely worthless. Failing at boot makes a missing env var a 30-second
+// fix; defaulting to '' makes it an invisible, indefinite one.
+if (!process.env.IP_HASH_SALT && process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'IP_HASH_SALT is required in production — an unsalted IP hash is trivially reversible. See .env.example.'
+  );
+}
+
 // Hash IP so plaintext addresses are never stored in the DB.
 // Uses a server-side salt to prevent rainbow-table reversal.
 function hashIp(raw) {
@@ -20,15 +31,26 @@ function hashIp(raw) {
 }
 
 export function getClientIp(request) {
-  // x-forwarded-for: first entry is the original client; last is the nearest proxy
-  const raw = request.headers.get('x-real-ip')
-    ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  // Only trust headers the platform sets and a client cannot forge.
+  //
+  // x-forwarded-for is APPENDED to, not replaced — a client can send its own and
+  // the edge tacks the real address on the end. So the FIRST entry is
+  // attacker-controlled, and reading it lets anyone mint a fresh rate-limit
+  // bucket per request just by rotating one header. The last entry (nearest
+  // proxy) is the only trustworthy part, and it's a last resort behind the two
+  // headers the platform owns outright.
+  const raw = request.headers.get('x-vercel-forwarded-for')
+    ?? request.headers.get('x-real-ip')
+    ?? request.headers.get('x-forwarded-for')?.split(',').pop()?.trim()
     ?? '127.0.0.1';
   return hashIp(raw);
 }
 
 export function dbErr(error) {
-  return NextResponse.json({ error: error.message }, { status: 500 });
+  // Postgres messages name columns, constraints and RLS policies — useful to us
+  // in the logs, free reconnaissance in a response body.
+  console.error('db error:', error?.message);
+  return NextResponse.json({ error: 'Database error' }, { status: 500 });
 }
 
 // Returns true if the request is allowed, false if the rate limit is exceeded.

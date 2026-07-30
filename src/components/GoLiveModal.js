@@ -3,14 +3,9 @@
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
 import PulsingDot from './PulsingDot';
-
-function stripAuth(req) {
-  return {
-    ...req,
-    auth: { type: 'none' },
-    headers: (req.headers ?? []).filter((h) => h.key?.trim().toLowerCase() !== 'authorization'),
-  };
-}
+// Same helper the API routes use — the server strips again on write regardless,
+// but sending a stripped state means the token never leaves the browser at all.
+import { stripAuth } from '@/lib/live';
 
 export default function GoLiveModal({ req, onCancel }) {
   const [includeAuth, setIncludeAuth] = useState(false);

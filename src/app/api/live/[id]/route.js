@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { dbErr, getClientIp, rateLimit, tooManyRequests } from '@/lib/db';
+import { stripAuth, isValidLiveState } from '@/lib/live';
+import { tokensMatch } from '@/lib/tokens';
 
 export async function GET(request, { params }) {
   if (!await rateLimit(`read:${getClientIp(request)}`, { limit: 60, window: 60 })) return tooManyRequests();
@@ -28,7 +30,14 @@ export async function PATCH(request, { params }) {
   catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
   const fields = {};
-  if (body.state !== undefined) fields.state = body.state;
+  if (body.state !== undefined) {
+    // Must be a plain object — a JSON string would slip past stripAuth's object
+    // spread below and get stored with its auth intact.
+    if (!isValidLiveState(body.state)) {
+      return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
+    }
+    fields.state = body.state;
+  }
   if (body.response !== undefined) fields.response = body.response;
   if (body.host_connected !== undefined) fields.host_connected = body.host_connected;
 
@@ -51,7 +60,7 @@ export async function PATCH(request, { params }) {
   if (needsHostAuth) {
     const hostToken = request.headers.get('x-host-token');
     if (!hostToken) return NextResponse.json({ error: 'Missing host token' }, { status: 401 });
-    if (session.host_token !== hostToken) {
+    if (!tokensMatch(session.host_token, hostToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
   }
@@ -59,14 +68,8 @@ export async function PATCH(request, { params }) {
   // The session's "share auth tokens" choice is made once at creation and must hold for
   // its whole lifetime — strip auth server-side on every write so a later state sync
   // (typed, pasted, or loaded from a saved request) can't silently leak tokens to guests.
-  if (fields.state && session.include_auth === false && typeof fields.state === 'object') {
-    fields.state = {
-      ...fields.state,
-      auth: { type: 'none' },
-      headers: (fields.state.headers ?? []).filter(
-        (h) => h?.key?.trim().toLowerCase() !== 'authorization'
-      ),
-    };
+  if (fields.state && session.include_auth === false) {
+    fields.state = stripAuth(fields.state);
   }
 
   const { error } = await supabase.from('live_sessions').update(fields).eq('id', id);
@@ -87,7 +90,7 @@ export async function DELETE(request, { params }) {
     .eq('id', id)
     .single();
 
-  if (!session || session.host_token !== hostToken) {
+  if (!session || !tokensMatch(session.host_token, hostToken)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
