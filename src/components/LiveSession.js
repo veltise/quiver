@@ -29,7 +29,7 @@ function LiveTabButton({ id, activeTab, onClick, viewers, myId, children }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2.5 text-sm transition-colors flex items-center gap-1.5 ${activeTab === id ? 'text-text border-b-2 border-accent' : 'text-muted hover:text-text'}`}
+      className={`px-4 py-2.5 text-body transition-colors flex items-center gap-1.5 ${activeTab === id ? 'text-text border-b-2 border-accent' : 'text-muted hover:text-text'}`}
     >
       {children}
       {others.slice(0, 3).map((v) => (
@@ -580,9 +580,9 @@ export default function LiveSession({
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
         <div className="text-center">
-          <p className="text-muted font-mono text-sm mb-2">Session ended</p>
-          <p className="text-dim text-xs mb-4">The host ended this live session.</p>
-          <a href="/" className="text-brand hover:text-brand-hover text-sm font-mono transition-colors">← Go to Quiver</a>
+          <p className="text-muted font-mono text-body mb-2">Session ended</p>
+          <p className="text-dim text-body mb-4">The host ended this live session.</p>
+          <a href="/" className="text-brand hover:text-brand-hover text-body font-mono transition-colors">← Go to Quiver</a>
         </div>
       </div>
     );
@@ -593,10 +593,10 @@ export default function LiveSession({
       {/* Reconnect banner — shown after 3 auto-retries fail */}
       {channelStatus === 'error' && reconnectAttemptsRef.current >= 3 && (
         <div className="bg-warning/10 border-b border-warning/30 px-6 py-2 flex items-center justify-between">
-          <span className="text-xs text-warning">Connection lost — changes may not sync</span>
+          <span className="text-body text-warning">Connection lost — changes may not sync</span>
           <button
             onClick={() => { reconnectAttemptsRef.current = 0; setReconnectKey((k) => k + 1); }}
-            className="text-xs text-warning hover:text-warning transition-colors px-2 py-0.5 rounded border border-warning/40 hover:border-warning"
+            className="text-body text-warning hover:text-warning transition-colors px-2 py-0.5 rounded border border-warning/40 hover:border-warning"
           >
             Reconnect
           </button>
@@ -608,19 +608,19 @@ export default function LiveSession({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             {hostConnected ? <PulsingDot /> : <span className="h-2 w-2 rounded-full bg-warning inline-block" />}
-            <span className={`text-xs font-semibold tracking-wide ${hostConnected ? 'text-error' : 'text-warning'}`}>
+            <span className={`text-body font-semibold tracking-wide ${hostConnected ? 'text-error' : 'text-warning'}`}>
               {hostConnected ? 'LIVE' : 'HOST DISCONNECTED'}
             </span>
           </div>
           {!isCollaborative && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-surface-raised text-muted border border-border">
+            <span className="text-body px-1.5 py-0.5 rounded bg-surface-raised text-muted border border-border">
               {isHost ? 'Demo mode' : 'View only'}
             </span>
           )}
           <button
             onClick={copySessionUrl}
             title="Click to copy session URL"
-            className="text-xs text-dim hover:text-text transition-colors font-mono"
+            className="text-body text-dim hover:text-text transition-colors font-mono"
           >
             {urlCopied ? '✓ Copied!' : `…/live/${sessionId}`}
           </button>
@@ -628,7 +628,7 @@ export default function LiveSession({
 
         <div className="flex items-center gap-3">
           {expiryLabel && (
-            <span className={`text-xs ${expiryUrgent ? 'text-warning' : 'text-dim'}`}>
+            <span className={`text-body ${expiryUrgent ? 'text-warning' : 'text-dim'}`}>
               {expiryLabel}
             </span>
           )}
@@ -639,7 +639,7 @@ export default function LiveSession({
                 {viewers.slice(0, 7).map((v) => (
                   <div
                     key={v.id}
-                    className="w-5 h-5 rounded-full border-2 border-border-subtle flex items-center justify-center text-[9px] font-bold"
+                    className="w-5 h-5 rounded-full border-2 border-border-subtle flex items-center justify-center text-micro font-bold"
                     style={{ backgroundColor: v.color }}
                     title={v.isHost ? 'Host' : 'Viewer'}
                   >
@@ -647,26 +647,26 @@ export default function LiveSession({
                   </div>
                 ))}
                 {viewers.length > 7 && (
-                  <div className="w-5 h-5 rounded-full border-2 border-border-subtle bg-[rgba(242,237,228,.08)] flex items-center justify-center text-[9px] text-muted">
+                  <div className="w-5 h-5 rounded-full border-2 border-border-subtle bg-[rgba(242,237,228,.08)] flex items-center justify-center text-micro text-muted">
                     +{viewers.length - 7}
                   </div>
                 )}
               </div>
-              <span className="text-xs text-dim">
+              <span className="text-body text-dim">
                 {otherCount === 0 ? 'Just you' : `${otherCount} other${otherCount !== 1 ? 's' : ''}`}
               </span>
             </div>
           )}
 
           {!includeAuth && (
-            <span className="text-xs text-dim" title="Auth tokens are not shared in this session">auth hidden</span>
+            <span className="text-body text-dim" title="Auth tokens are not shared in this session">auth hidden</span>
           )}
 
           {!isHost && (
             <button
               onClick={forkToWorkspace}
               disabled={forking}
-              className="text-xs px-3 py-1 rounded border border-accent/40 text-accent hover:text-accent hover:border-accent disabled:opacity-40 transition-colors"
+              className="text-body px-3 py-1 rounded border border-accent/40 text-accent hover:text-accent hover:border-accent disabled:opacity-40 transition-colors"
             >
               {forking ? 'Saving…' : 'Fork to workspace'}
             </button>
@@ -674,7 +674,7 @@ export default function LiveSession({
 
           <button
             onClick={isHost ? endSession : () => { window.location.href = '/'; }}
-            className="text-xs px-3 py-1 rounded border border-border text-muted hover:text-text hover:border-border-strong transition-colors"
+            className="text-body px-3 py-1 rounded border border-border text-muted hover:text-text hover:border-border-strong transition-colors"
           >
             {isHost ? 'End session' : 'Leave'}
           </button>
@@ -708,7 +708,7 @@ export default function LiveSession({
         <div onInput={canEdit ? sendTyping : undefined}>
           {!canEdit && (
             <div className="mb-2 text-center">
-              <span className="text-xs text-dim">View only — only the host can edit in demo mode</span>
+              <span className="text-body text-dim">View only — only the host can edit in demo mode</span>
             </div>
           )}
           <div className={!canEdit ? 'pointer-events-none select-none' : ''}>
@@ -733,29 +733,29 @@ export default function LiveSession({
                 {viewers.filter((v) => v.id !== myId && v.isTyping).map((v) => (
                   <span key={v.id} className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: v.color }} />
                 ))}
-                <span className="text-xs text-accent/70">typing…</span>
+                <span className="text-body text-accent/70">typing…</span>
               </div>
             )}
             <div className="flex border-b border-border bg-surface">
               <LiveTabButton id="params" activeTab={activeTab} onClick={() => changeTab('params')} viewers={viewers} myId={myId}>
                 Params
                 {req.url?.includes('?') && (
-                  <span className="ml-1.5 text-xs text-muted">· {req.url.split('?')[1].split('&').filter(Boolean).length}</span>
+                  <span className="ml-1.5 text-body text-muted">· {req.url.split('?')[1].split('&').filter(Boolean).length}</span>
                 )}
               </LiveTabButton>
               <LiveTabButton id="headers" activeTab={activeTab} onClick={() => changeTab('headers')} viewers={viewers} myId={myId}>
                 Headers
-                {(req.headers?.length ?? 0) > 0 && <span className="ml-1.5 text-xs text-muted">· {req.headers.length}</span>}
+                {(req.headers?.length ?? 0) > 0 && <span className="ml-1.5 text-body text-muted">· {req.headers.length}</span>}
               </LiveTabButton>
               <LiveTabButton id="auth" activeTab={activeTab} onClick={() => changeTab('auth')} viewers={viewers} myId={myId}>
                 Auth
-                {req.auth?.type !== 'none' && <span className="ml-1.5 text-xs text-accent">●</span>}
+                {req.auth?.type !== 'none' && <span className="ml-1.5 text-body text-accent">●</span>}
               </LiveTabButton>
               {showBody && (
                 <LiveTabButton id="body" activeTab={activeTab} onClick={() => changeTab('body')} viewers={viewers} myId={myId}>
                   Body
                   {req.bodyType !== 'none' && (
-                    <span className={`ml-1.5 text-xs ${jsonInvalid ? 'text-error' : 'text-muted'}`}>
+                    <span className={`ml-1.5 text-body ${jsonInvalid ? 'text-error' : 'text-muted'}`}>
                       {jsonInvalid ? '!' : `(${req.bodyType})`}
                     </span>
                   )}
@@ -787,7 +787,7 @@ export default function LiveSession({
         {/* Response panel — always interactive; Raw/Copy/Download/search/expand are local-only, nothing here mutates shared state */}
         <div className="border border-border rounded-lg overflow-hidden relative">
           <div className="border-b border-border bg-surface px-4 py-2.5">
-            <span className="text-sm text-muted">Response</span>
+            <span className="text-body text-muted">Response</span>
           </div>
           <div className="p-4">
             <ResponsePanel response={response} isLoading={isLoading} />

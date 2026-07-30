@@ -18,9 +18,9 @@ export default async function LivePage({ params }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
         <div className="text-center">
-          <p className="text-muted font-mono text-sm mb-2">Session not found</p>
-          <p className="text-dim text-xs mb-4">This live session may have ended or expired.</p>
-          <a href="/" className="text-accent hover:text-accent text-sm font-mono transition-colors">
+          <p className="text-muted font-mono text-body mb-2">Session not found</p>
+          <p className="text-dim text-body mb-4">This live session may have ended or expired.</p>
+          <a href="/" className="text-accent hover:text-accent text-body font-mono transition-colors">
             ← Go to Quiver
           </a>
         </div>

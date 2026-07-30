@@ -93,6 +93,8 @@ Tests live alongside the code they cover (`*.test.js`). The SSRF-protection logi
 
 Deployed on [Vercel](https://vercel.com). Import the repo, add the four environment variables above under Project Settings → Environment Variables (for Production and Preview), and deploy — no build configuration changes needed.
 
+If you set up Sentry, add `SENTRY_AUTH_TOKEN` here too — production builds happen on Vercel's servers, not yours, so it has to be set here even though it's also in your local `.env.local` (see "Error monitoring" above).
+
 ## Project structure
 
 ```

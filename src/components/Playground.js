@@ -33,7 +33,7 @@ const VALID_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 
 // How long a chunked response gets to finish before we switch to showing it
 // stream in progressively. See the streaming branch in send().
 const STREAM_REVEAL_MS = 250;
-const HDR_BTN = 'text-sm px-4 py-2 border border-[rgba(242,237,228,.14)] hover:border-[rgba(242,237,228,.4)] hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors font-medium';
+const HDR_BTN = 'text-body px-4 py-2 border border-[rgba(242,237,228,.14)] hover:border-[rgba(242,237,228,.4)] hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors font-medium';
 const MAX_TABS = 10;
 
 export const DEFAULT_STATE = {
@@ -72,7 +72,7 @@ function TabButton({ id, activeTab, onClick, icon: Icon, children }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2.5 -mb-px text-sm border-b-2 transition-colors ${activeTab === id ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
+      className={`flex items-center gap-1.5 px-3 py-2.5 -mb-px text-body border-b-2 transition-colors ${activeTab === id ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
     >
       
       {children}
@@ -876,7 +876,7 @@ export default function Playground({ initialState, isShared }) {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setTabMenu(null)} onContextMenu={(e) => { e.preventDefault(); setTabMenu(null); }} />
           <div
-            className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-52 text-xs"
+            className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-52 text-body"
             style={{ left: tabMenu.x, top: tabMenu.y }}
           >
             <button onClick={() => { duplicateTab(tabMenu.tabId); setTabMenu(null); }}
@@ -911,10 +911,10 @@ export default function Playground({ initialState, isShared }) {
 
       {showBanner && (
         <div className="border-b border-accent/20 bg-accent/5 px-6 py-2.5 flex items-center justify-between shrink-0">
-          <span className="text-xs text-accent">You're viewing a shared request</span>
+          <span className="text-body text-accent">You're viewing a shared request</span>
           <div className="flex items-center gap-3">
             <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-              className="text-xs px-3 py-1 border border-accent/40 text-accent hover:bg-accent/10 hover:border-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              className="text-body px-3 py-1 border border-accent/40 text-accent hover:bg-accent/10 hover:border-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
               Save to my workspace
             </button>
             <button onClick={() => setShowBanner(false)} className="text-accent/50 hover:text-accent transition-colors">×</button>
@@ -927,11 +927,11 @@ export default function Playground({ initialState, isShared }) {
         {/* Brand + breadcrumb */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-4">
           <div className="chamfer w-6 h-6 bg-accent shrink-0" />
-          <h1 className="text-base font-bold tracking-[-0.01em] whitespace-nowrap text-text shrink-0">Quiver</h1>
+          <h1 className="text-body font-bold tracking-[-0.01em] whitespace-nowrap text-text shrink-0">Quiver</h1>
           {activeRequest && (
             <>
               <span className="hidden md:block w-px h-4 bg-border shrink-0" />
-              <span className="hidden md:block text-[13px] text-dim truncate min-w-0">
+              <span className="hidden md:block text-body text-dim truncate min-w-0">
                 {breadcrumb?.collection}
                 {breadcrumb?.collection && !suppressBreadcrumbName && <span className="opacity-50"> / </span>}
                 {!suppressBreadcrumbName && <span className="text-muted">{activeRequest.name}</span>}
@@ -943,14 +943,14 @@ export default function Playground({ initialState, isShared }) {
         {/* Center: active request name (mobile only — desktop uses the breadcrumb above) */}
         <div className="flex md:hidden items-center justify-center min-w-0 px-2">
           {activeRequest && (
-            <span className="text-xs text-muted truncate max-w-[10rem]">{activeRequest.name}</span>
+            <span className="text-body text-muted truncate max-w-[10rem]">{activeRequest.name}</span>
           )}
         </div>
 
         {/* Right: actions */}
         <div className="flex items-center gap-1 md:gap-1.5 shrink-0 ml-4">
           <button onClick={() => setActiveModal('live')}
-            className="flex items-center gap-1.5 text-xs px-2 py-2 text-error hover:brightness-110 transition-all active:scale-95 font-semibold">
+            className="flex items-center gap-1.5 text-body px-2 py-2 text-error hover:brightness-110 transition-all active:scale-95 font-semibold">
             <PulsingDot className="h-1.5 w-1.5 shrink-0" />
             <span className="hidden md:inline">Live</span>
           </button>
@@ -959,33 +959,33 @@ export default function Playground({ initialState, isShared }) {
             <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
           </button>
           <div className="relative" ref={toolsRef}>
-            <button className="flex items-center gap-1 text-[13px] px-2 py-2 text-muted hover:text-text transition-colors" onClick={() => setShowTools(v => !v)}>
+            <button className="flex items-center gap-1 text-body px-2 py-2 text-muted hover:text-text transition-colors" onClick={() => setShowTools(v => !v)}>
               <span className="hidden md:inline">Tools</span><ChevronDown size={10} />
             </button>
             {showTools && (
               <div className="absolute right-0 top-full mt-1.5 bg-surface-raised border border-border shadow-2xl py-1.5 z-20 w-52">
-                <button onClick={() => { setActiveModal('env'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                <button onClick={() => { setActiveModal('env'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
                   <Layers size={12} className={`shrink-0 ${envVars.some(v => v.key) ? 'text-accent' : 'text-dim'}`} />
                   Environments
                 </button>
-                <button onClick={() => { setActiveModal('runner'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                <button onClick={() => { setActiveModal('runner'); setShowTools(false); }} className="w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
                   <Play size={12} className="shrink-0 text-dim" />
                   Collection Runner
                 </button>
                 <div className="hidden md:block mx-3 my-1.5 border-t border-border" />
-                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed items-center gap-2.5">
+                <button suppressHydrationWarning onClick={() => { copyAsCurl(); setShowTools(false); }} disabled={!req.url?.trim()} className="hidden md:flex w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed items-center gap-2.5">
                   <Terminal size={12} className="shrink-0 text-dim" />
                   Copy as cURL
                 </button>
-                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="hidden md:flex w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors items-center gap-2.5">
+                <button onClick={() => { setActiveModal('curl'); setShowTools(false); }} className="hidden md:flex w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors items-center gap-2.5">
                   <Download size={12} className="shrink-0 text-dim" />
                   Import cURL
                 </button>
-                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                <button onClick={() => { exportWorkspace(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
                   <Upload size={12} className="shrink-0 text-dim" />
                   Export workspace
                 </button>
-                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
+                <button onClick={() => { importFileRef.current?.click(); setShowTools(false); }} className="w-full text-left px-3 py-2 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors flex items-center gap-2.5">
                   <FolderOpen size={12} className="shrink-0 text-dim" />
                   Import workspace
                 </button>
@@ -999,7 +999,7 @@ export default function Playground({ initialState, isShared }) {
             <Keyboard size={14} />
           </button>
           <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-            className="chamfer-sm flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-semibold">
+            className="chamfer-sm flex items-center gap-1.5 text-body px-2 md:px-4 py-2 bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-semibold">
             <Bookmark size={13} /><span className="hidden md:inline">Save</span>
           </button>
         </div>
@@ -1035,11 +1035,11 @@ export default function Playground({ initialState, isShared }) {
           <div className="hidden md:flex items-center border-b border-border bg-surface overflow-x-auto shrink-0 min-h-0">
             {tabs.map(tab => {
               const isActive = tab.id === activeTabId;
-              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-border shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-b-2 ${isActive ? 'bg-surface-raised text-text border-b-accent' : 'text-muted hover:text-text hover:bg-surface-raised/30 border-b-transparent'}`;
+              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-body border-r border-border shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-b-2 ${isActive ? 'bg-surface-raised text-text border-b-accent' : 'text-muted hover:text-text hover:bg-surface-raised/30 border-b-transparent'}`;
               if (editingTab?.id === tab.id) {
                 return (
                   <div key={tab.id} className={tabClasses}>
-                    <span className={`text-[9px] font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
+                    <span className={`text-micro font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
                     <input
                       autoFocus
                       aria-label="Tab name"
@@ -1052,7 +1052,7 @@ export default function Playground({ initialState, isShared }) {
                         if (e.key === 'Enter') { e.preventDefault(); commitTabRename(); }
                         if (e.key === 'Escape') setEditingTab(null);
                       }}
-                      className="min-w-0 flex-1 bg-surface-raised border border-border px-1 py-0.5 text-xs text-text focus:outline-none focus:border-accent"
+                      className="min-w-0 flex-1 bg-surface-raised border border-border px-1 py-0.5 text-body text-text focus:outline-none focus:border-accent"
                     />
                   </div>
                 );
@@ -1069,7 +1069,7 @@ export default function Playground({ initialState, isShared }) {
                   title="Double-click to rename"
                   className={tabClasses}
                 >
-                  <span className={`text-[9px] font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
+                  <span className={`text-micro font-semibold shrink-0 ${methodColor(tab.req.method)}`}>{tab.req.method}</span>
                   <span className="truncate min-w-0 flex-1 text-left">{tabLabel(tab)}</span>
                   <span
                     role="button"
@@ -1161,7 +1161,7 @@ export default function Playground({ initialState, isShared }) {
 
             {/* Last response summary — mobile only; on desktop the response panel is already visible */}
             {response && !response.error && !isLoading && (
-              <div className="shrink-0 px-1 text-xs text-dim flex md:hidden items-center gap-1.5">
+              <div className="shrink-0 px-1 text-body text-dim flex md:hidden items-center gap-1.5">
                 <span>Last response:</span>
                 <span className={statusColor(response.status)}>{response.status}</span>
                 <span className="text-dim select-none">·</span>
@@ -1191,7 +1191,7 @@ export default function Playground({ initialState, isShared }) {
               {response && !response.error && (
                 <>
                   {response.streaming && (
-                    <div className="flex items-center gap-1 text-xs text-accent">
+                    <div className="flex items-center gap-1 text-body text-accent">
                       <span className="relative flex h-1.5 w-1.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
@@ -1203,14 +1203,14 @@ export default function Playground({ initialState, isShared }) {
                     href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/${response.status}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`text-xs font-semibold px-1.5 py-0.5 rounded hover:opacity-80 transition-opacity ${statusBadgeClass(response.status)}`}
+                    className={`text-body font-semibold px-1.5 py-0.5 rounded hover:opacity-80 transition-opacity ${statusBadgeClass(response.status)}`}
                   >
                     {response.status} {response.statusText}
                   </a>
-                  <span className="text-dim text-xs select-none">·</span>
-                  <span className={`text-xs tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
-                  <span className="text-dim text-xs select-none">·</span>
-                  <span className="text-xs text-muted tabular-nums">{formatSize(response.body)}</span>
+                  <span className="text-dim text-body select-none">·</span>
+                  <span className={`text-body tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
+                  <span className="text-dim text-body select-none">·</span>
+                  <span className="text-body text-muted tabular-nums">{formatSize(response.body)}</span>
                 </>
               )}
             </div>
@@ -1232,27 +1232,27 @@ export default function Playground({ initialState, isShared }) {
       <div className="md:hidden fixed bottom-0 inset-x-0 z-30 flex border-t border-border bg-surface">
         <button
           onClick={() => setMobileView('request')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors ${mobileView === 'request' ? 'text-text' : 'text-muted'}`}
+          className={`flex-1 py-3 text-body font-medium transition-colors ${mobileView === 'request' ? 'text-text' : 'text-muted'}`}
         >
           Request
         </button>
         <button
           onClick={() => setMobileView('response')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-2 ${mobileView === 'response' ? 'text-text' : 'text-muted'}`}
+          className={`flex-1 py-3 text-body font-medium transition-colors flex items-center justify-center gap-2 ${mobileView === 'response' ? 'text-text' : 'text-muted'}`}
         >
           Response
           {response && !response.error && (
-            <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${statusBadgeClass(response.status)}`}>
+            <span className={`text-body px-1.5 py-0.5 rounded font-semibold ${statusBadgeClass(response.status)}`}>
               {response.status}
             </span>
           )}
         </button>
         <button
           onClick={() => setMobileView('library')}
-          className={`flex-1 py-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 ${mobileView === 'library' ? 'text-text' : 'text-muted'}`}
+          className={`flex-1 py-3 text-body font-medium transition-colors flex items-center justify-center gap-1.5 ${mobileView === 'library' ? 'text-text' : 'text-muted'}`}
         >
           Library
-          {saved.length > 0 && <span className="text-dim text-xs">{saved.length}</span>}
+          {saved.length > 0 && <span className="text-dim text-body">{saved.length}</span>}
         </button>
       </div>
     </div>

@@ -6,7 +6,10 @@
 }
 
 body {
-  font-size: 14px;
+  /* Matches --text-body below. Any element with no explicit text-* class
+     inherits this directly — if it drifts from --text-body, that's a
+     4th, untracked size sneaking back in with no class name to grep for. */
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -120,6 +123,21 @@ button:not([disabled]):active {
 }
 
 @theme {
+  /* Type scale — 2 sizes total, ratio 1.3 (>=1.25). Before this, the app had
+     9 distinct sizes (9/10.5/11/12/13/13.5/14/16/18px) accumulated one nudge
+     at a time; no adjacent pair reached even a 1.1 ratio, so nothing read as
+     an actual hierarchy. A third tier (18px, for the wordmark and two modal
+     close glyphs — 4 usages total) was tried and dropped: too rarely used to
+     justify a whole extra step, and font-bold/tracking already carry the
+     wordmark's emphasis without needing a bigger size. text-micro is for
+     eyebrow labels/tab counts/hints (was 9/10.5/11px); text-body is
+     everything else, including former headings (was xs/sm, the 13/13.5px
+     one-offs, and base/lg). */
+  --text-micro:              10px;
+  --text-micro--line-height: 1.4;
+  --text-body:               13px;
+  --text-body--line-height:  1.5;
+
   /* Backgrounds */
   --color-canvas:         #121110;
   --color-surface:        #171614;

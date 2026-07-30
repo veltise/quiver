@@ -50,7 +50,7 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
             <button
               type="button"
               onClick={() => setMethodOpen(v => !v)}
-              className={`flex items-center w-[5.5rem] pl-3 pr-7 h-full text-sm font-bold focus:outline-none cursor-pointer select-none ${methodColor(method)}`}
+              className={`flex items-center w-[5.5rem] pl-3 pr-7 h-full text-body font-bold focus:outline-none cursor-pointer select-none ${methodColor(method)}`}
             >
               {method}
             </button>
@@ -65,7 +65,7 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSend()}
-            className="flex-1 bg-transparent  px-4 text-sm placeholder-dim focus:outline-none font-mono min-w-0 text-text"
+            className="flex-1 bg-transparent  px-4 text-body placeholder-dim focus:outline-none font-mono min-w-0 text-text"
           />
         </div>
 
@@ -77,7 +77,7 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
                 key={m}
                 type="button"
                 onClick={() => { onMethodChange(m); setMethodOpen(false); }}
-                className={`w-full text-left px-3 py-1.5 text-xs font-bold transition-colors hover:bg-[rgba(242,237,228,.06)] ${methodColor(m)} ${m === method ? 'bg-[rgba(242,237,228,.04)]' : ''}`}
+                className={`w-full text-left px-3 py-1.5 text-body font-bold transition-colors hover:bg-[rgba(242,237,228,.06)] ${methodColor(m)} ${m === method ? 'bg-[rgba(242,237,228,.04)]' : ''}`}
               >
                 {m}
               </button>
@@ -91,7 +91,7 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
         suppressHydrationWarning
         onClick={onSend}
         disabled={!canSend}
-        className="chamfer-send shrink-0 h-11 px-6 bg-accent hover:bg-accent-hover active:bg-accent-hover text-ink disabled:bg-surface-raised disabled:text-dim disabled:opacity-60 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
+        className="chamfer-send shrink-0 h-11 px-6 bg-accent hover:bg-accent-hover active:bg-accent-hover text-ink disabled:bg-surface-raised disabled:text-dim disabled:opacity-60 disabled:cursor-not-allowed text-body font-semibold transition-colors"
       >
         {isLoading ? <span className="inline-flex gap-1"><span className="animate-bounce" style={{animationDelay:'0ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'150ms'}}>·</span><span className="animate-bounce" style={{animationDelay:'300ms'}}>·</span></span> : 'Send'}
       </button>
@@ -107,13 +107,13 @@ export default function RequestBar({ method, url, onMethodChange, onUrlChange, o
             value={timeoutInput}
             onChange={handleTimeoutChange}
             onBlur={handleTimeoutBlur}
-            className="w-5 bg-transparent text-sm text-right focus:outline-none text-muted focus:text-text transition-colors"
+            className="w-5 bg-transparent text-body text-right focus:outline-none text-muted focus:text-text transition-colors"
           />
-          <span className="text-dim text-xs">s</span>
+          <span className="text-dim text-body">s</span>
         </div>
       </div>
     </div>
-    <span suppressHydrationWarning className="font-mono text-[10.5px] text-dim">
+    <span suppressHydrationWarning className="font-mono text-micro text-dim">
       {isMac ? '⌘' : 'Ctrl'}+↵ to send
     </span>
     </div>

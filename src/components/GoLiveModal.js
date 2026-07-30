@@ -42,9 +42,9 @@ export default function GoLiveModal({ req, onCancel }) {
       <div className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface border border-border rounded-xl shadow-2xl p-6 w-96">
         <div className="flex items-center gap-2 mb-1">
           <PulsingDot />
-          <h2 className="text-sm font-semibold text-text">Start a live session</h2>
+          <h2 className="text-body font-semibold text-text">Start a live session</h2>
         </div>
-        <p className="text-xs text-muted mb-4">
+        <p className="text-body text-muted mb-4">
           Share the session URL with teammates. Sessions expire after 24 hours.
         </p>
 
@@ -60,8 +60,8 @@ export default function GoLiveModal({ req, onCancel }) {
               onClick={() => setCollaborative(value)}
               className={`flex-1 rounded-lg border p-3 text-left transition-colors ${collaborative === value ? 'border-accent/60 bg-accent/8' : 'border-border hover:border-border-strong'}`}
             >
-              <div className={`text-xs font-medium mb-0.5 ${collaborative === value ? 'text-accent' : 'text-text'}`}>{label}</div>
-              <div className="text-xs text-dim">{desc}</div>
+              <div className={`text-body font-medium mb-0.5 ${collaborative === value ? 'text-accent' : 'text-text'}`}>{label}</div>
+              <div className="text-body text-dim">{desc}</div>
             </button>
           ))}
         </div>
@@ -80,11 +80,11 @@ export default function GoLiveModal({ req, onCancel }) {
             )}
           </div>
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-text">
+            <div className="flex items-center gap-1.5 text-body text-text">
               <ShieldAlert size={12} className={includeAuth ? 'text-warning' : 'text-dim'} />
               Share auth tokens
             </div>
-            <div className="text-xs text-dim mt-0.5 leading-relaxed">
+            <div className="text-body text-dim mt-0.5 leading-relaxed">
               Bearer tokens and Authorization headers will be visible to all participants
             </div>
           </div>
@@ -92,22 +92,22 @@ export default function GoLiveModal({ req, onCancel }) {
 
         {includeAuth && (
           <div className="mb-4 bg-warning/10 border border-warning/25 rounded-lg px-3 py-2">
-            <p className="text-xs text-warning leading-relaxed">
+            <p className="text-body text-warning leading-relaxed">
               Anyone with the session link will be able to see your auth tokens. Only share with people you trust.
             </p>
           </div>
         )}
 
-        {error && <p className="text-xs text-error mb-3">{error}</p>}
+        {error && <p className="text-body text-error mb-3">{error}</p>}
 
         <div className="flex gap-2 justify-end">
-          <button onClick={onCancel} className="text-sm px-4 py-2 text-muted hover:text-text transition-colors">
+          <button onClick={onCancel} className="text-body px-4 py-2 text-muted hover:text-text transition-colors">
             Cancel
           </button>
           <button
             onClick={handleStart}
             disabled={starting}
-            className="text-sm px-4 py-2 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors text-text"
+            className="text-body px-4 py-2 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium transition-colors text-text"
           >
             {starting ? 'Starting…' : 'Go Live'}
           </button>

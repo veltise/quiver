@@ -98,7 +98,7 @@ export default function CodeGenPanel({ req }) {
             <button
               key={l}
               onClick={() => setLang(l)}
-              className={`px-3 py-1 text-xs rounded transition-colors ${lang === l ? 'bg-[rgba(242,237,228,.08)] text-text' : 'text-muted hover:text-text hover:bg-surface-raised'}`}
+              className={`px-3 py-1 text-body rounded transition-colors ${lang === l ? 'bg-[rgba(242,237,228,.08)] text-text' : 'text-muted hover:text-text hover:bg-surface-raised'}`}
             >
               {l}
             </button>
@@ -106,13 +106,13 @@ export default function CodeGenPanel({ req }) {
         </div>
         <button
           onClick={copy}
-          className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-border-strong"
+          className="flex items-center gap-1.5 text-body text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-border-strong"
         >
           <Copy size={11} />{copied ? 'Copied' : 'Copy'}
         </button>
       </div>
       <pre
-        className="text-sm font-mono overflow-auto max-h-72 whitespace-pre leading-relaxed bg-surface-raised rounded p-4"
+        className="text-body font-mono overflow-auto max-h-72 whitespace-pre leading-relaxed bg-surface-raised rounded p-4"
         dangerouslySetInnerHTML={{ __html: highlighted }}
       />
     </div>

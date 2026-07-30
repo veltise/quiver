@@ -41,7 +41,7 @@ export default function HeadersEditor({ headers, onChange }) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10.5px] uppercase tracking-[0.09em] text-dim">Request headers</span>
+        <span className="text-micro uppercase tracking-[0.09em] text-dim">Request headers</span>
         <div className="flex items-center gap-3">
           {headers.length > 0 && (
             <button
@@ -53,14 +53,14 @@ export default function HeadersEditor({ headers, onChange }) {
               <Ban size={11} />
             </button>
           )}
-          <button onClick={() => add('key')} className="text-xs text-accent hover:text-accent-hover transition-colors">
+          <button onClick={() => add('key')} className="text-body text-accent hover:text-accent-hover transition-colors">
             + Add header
           </button>
         </div>
       </div>
       <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border">
-        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Key</span>
-        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Value</span>
+        <span className="text-micro uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Key</span>
+        <span className="text-micro uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Value</span>
       </div>
       {headers.map(h => (
         <div
@@ -69,14 +69,14 @@ export default function HeadersEditor({ headers, onChange }) {
         >
           <input
             ref={h.id === lastAdded ? keyRef : undefined}
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono text-text placeholder-dim focus:outline-none w-full"
             placeholder="key"
             value={h.key}
             onChange={e => update(h.id, 'key', e.target.value)}
           />
           <input
             ref={h.id === lastAdded ? valueRef : undefined}
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full "
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono text-text placeholder-dim focus:outline-none w-full "
             placeholder="value"
             value={h.value}
             onChange={e => update(h.id, 'value', e.target.value)}
@@ -95,7 +95,7 @@ export default function HeadersEditor({ headers, onChange }) {
         /* Ghost placeholder row — becomes a real row on focus */
         <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border opacity-50 hover:opacity-100 hover:bg-[rgba(242,237,228,.04)] focus-within:opacity-100 transition-all">
           <input
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono placeholder-dim focus:outline-none w-full"
             placeholder="key"
             aria-label="Header name"
             value=""
@@ -104,7 +104,7 @@ export default function HeadersEditor({ headers, onChange }) {
             readOnly
           />
           <input
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full "
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono placeholder-dim focus:outline-none w-full "
             placeholder="value"
             aria-label="Header value"
             value=""

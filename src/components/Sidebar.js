@@ -37,7 +37,7 @@ function ContextMenu({ entry, allCollections, position, onClose, onOpen, onRenam
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-56 text-sm" style={{ left, top: position.y }}>
+      <div className="fixed z-50 bg-surface-raised border border-border shadow-2xl py-1 w-56 text-body" style={{ left, top: position.y }}>
         {mode === 'main' ? (
           <>
             <button onClick={onOpen} className="w-full text-left px-3 py-1.5 text-text hover:bg-[rgba(242,237,228,.06)] transition-colors">Open</button>
@@ -58,22 +58,22 @@ function ContextMenu({ entry, allCollections, position, onClose, onOpen, onRenam
             </button>
             <div className="border-t border-border my-1" />
             <div className="px-2 pb-1">
-              <input ref={moveRef} className="w-full bg-surface-raised border border-border px-2.5 py-1.5 text-xs placeholder-dim focus:outline-none focus:border-[rgba(242,237,228,.3)]"
+              <input ref={moveRef} className="w-full bg-surface-raised border border-border px-2.5 py-1.5 text-body placeholder-dim focus:outline-none focus:border-[rgba(242,237,228,.3)]"
                 placeholder="Collection name…" value={moveInput} onChange={e => setMoveInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && moveInput.trim()) { onMove(moveInput.trim()); onClose(); } e.stopPropagation(); }} />
             </div>
             {otherCollections.length > 0 && (
               <div className="max-h-36 overflow-y-auto border-t border-border pt-1">
                 {otherCollections.map(c => (
-                  <button key={c} onClick={() => { onMove(c); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors font-mono truncate">{c}</button>
+                  <button key={c} onClick={() => { onMove(c); onClose(); }} className="w-full text-left px-3 py-1.5 text-body text-muted hover:text-text hover:bg-[rgba(242,237,228,.06)] transition-colors font-mono truncate">{c}</button>
                 ))}
               </div>
             )}
             {!moveInput && !otherCollections.length && (
-              <p className="px-3 py-2 text-xs text-dim italic border-t border-border">Type a name to create a new collection</p>
+              <p className="px-3 py-2 text-body text-dim italic border-t border-border">Type a name to create a new collection</p>
             )}
             {moveInput.trim() && !inputMatchesExisting && (
-              <button onClick={() => { onMove(moveInput.trim()); onClose(); }} className="w-full text-left px-3 py-1.5 text-xs text-accent hover:text-accent-hover hover:bg-[rgba(242,237,228,.06)] transition-colors border-t border-border-subtle">
+              <button onClick={() => { onMove(moveInput.trim()); onClose(); }} className="w-full text-left px-3 py-1.5 text-body text-accent hover:text-accent-hover hover:bg-[rgba(242,237,228,.06)] transition-colors border-t border-border-subtle">
                 Create &ldquo;{moveInput.trim()}&rdquo;
               </button>
             )}
@@ -115,13 +115,13 @@ function GroupHeader({ name, count, collapsed, onToggle, onRename }) {
       {renaming ? (
         <input ref={inputRef} value={value} onChange={e => setValue(e.target.value)} onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { setValue(name); setRenaming(false); } e.stopPropagation(); }}
-          className="flex-1 min-w-0 bg-surface-raised border border-border px-1.5 py-0.5 text-xs text-text focus:outline-none focus:border-accent" />
+          className="flex-1 min-w-0 bg-surface-raised border border-border px-1.5 py-0.5 text-body text-text focus:outline-none focus:border-accent" />
       ) : (
         <button onClick={onToggle} className="flex-1 min-w-0 text-left">
-          <MiddleTruncate text={name.toUpperCase()} className="text-[10.5px] uppercase tracking-[0.09em] text-dim" />
+          <MiddleTruncate text={name.toUpperCase()} className="text-micro uppercase tracking-[0.09em] text-dim" />
         </button>
       )}
-      <span className="text-[10.5px] text-dim mx-1.5 shrink-0 tabular-nums">{count}</span>
+      <span className="text-micro text-dim mx-1.5 shrink-0 tabular-nums">{count}</span>
       {!renaming && (
         <button onClick={() => setRenaming(true)} title="Rename collection"
           className="opacity-0 group-hover/header:opacity-100 text-dim hover:text-text transition-all p-0.5 shrink-0">
@@ -267,22 +267,22 @@ export default function Sidebar({
         <span className="qv-nock" />
         {/* Padding lives on the button, not the row, so the whole row area is clickable */}
         <button onClick={() => { onRestoreSaved(entry); setSearch(''); setFocusedId(null); }} className="flex items-center gap-2.5 flex-1 text-left min-w-0 pl-3.5 py-2">
-          <span className={`text-[11px] font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
+          <span className={`text-micro font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
           {showUrl ? (
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className={`text-[13px] truncate ${isActive ? 'text-text' : 'text-soft'}`}>
+              <span className={`text-body truncate ${isActive ? 'text-text' : 'text-soft'}`}>
                 {entry.nameIndices ? <Hl text={entry.name} indices={entry.nameIndices} /> : entry.name}
               </span>
               {entry.urlIndices?.length ? (
-                <span className="text-xs text-muted truncate font-mono">
+                <span className="text-body text-muted truncate font-mono">
                   <Hl text={entry.url} indices={entry.urlIndices} />
                 </span>
               ) : (
-                <MiddleTruncate text={entry.url} className="text-xs text-muted font-mono" />
+                <MiddleTruncate text={entry.url} className="text-body text-muted font-mono" />
               )}
             </div>
           ) : (
-            <MiddleTruncate text={label} className={`text-[13px] min-w-0 ${isActive ? 'text-text' : 'text-soft'}`} />
+            <MiddleTruncate text={label} className={`text-body min-w-0 ${isActive ? 'text-text' : 'text-soft'}`} />
           )}
         </button>
         <button onClick={e => { e.stopPropagation(); handleDeleteClick(entry.id); }}
@@ -305,7 +305,7 @@ export default function Sidebar({
     return (
       <div className="hidden md:flex flex-col w-10 border-r border-border-subtle bg-surface shrink-0 items-center pt-3 gap-1">
         <button onClick={onToggle} title="Expand sidebar" aria-label="Expand sidebar"
-          className="qv-ghost-btn shrink-0 w-[22px] h-[22px] flex items-center justify-center text-[11px] leading-none text-muted">
+          className="qv-ghost-btn shrink-0 w-[22px] h-[22px] flex items-center justify-center text-micro leading-none text-muted">
           ⟩
         </button>
         <div className="w-4 h-px bg-border-subtle my-1" />
@@ -342,20 +342,20 @@ export default function Sidebar({
       <div className="flex items-center gap-4 px-4 pt-4 pb-2.5 border-b border-border-subtle shrink-0">
         <button
           onClick={() => setTab('collections')}
-          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-[13px] transition-colors border-b-2 ${activeTab === 'collections' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
+          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-body transition-colors border-b-2 ${activeTab === 'collections' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
         >
           Collections
           {saved.length > 0 && <span className="text-dim">· {saved.length}</span>}
         </button>
         <button
           onClick={() => setTab('history')}
-          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-[13px] transition-colors border-b-2 ${activeTab === 'history' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
+          className={`flex items-center gap-1.5 whitespace-nowrap pb-2 text-body transition-colors border-b-2 ${activeTab === 'history' ? 'text-text border-accent' : 'text-muted border-transparent hover:text-text'}`}
         >
           History
           {history.length > 0 && <span className="text-dim">· {history.length}</span>}
         </button>
         <button onClick={onToggle} title="Collapse sidebar" aria-label="Collapse sidebar"
-          className="qv-ghost-btn ml-auto shrink-0 w-[22px] h-[22px] flex items-center justify-center text-[11px] leading-none text-muted">
+          className="qv-ghost-btn ml-auto shrink-0 w-[22px] h-[22px] flex items-center justify-center text-micro leading-none text-muted">
           ⟨
         </button>
       </div>
@@ -366,7 +366,7 @@ export default function Sidebar({
             <div className="flex items-center gap-2 flex-1 min-w-0 bg-surface-raised border border-border px-2.5 py-2">
               <Search size={11} className="text-dim shrink-0" />
               <input
-                className="flex-1 bg-transparent text-[13px] placeholder-dim focus:outline-none text-text min-w-0"
+                className="flex-1 bg-transparent text-body placeholder-dim focus:outline-none text-text min-w-0"
                 placeholder="Search requests…"
                 value={search}
                 onChange={e => { setSearch(e.target.value); setFocusedId(null); }}
@@ -390,10 +390,10 @@ export default function Sidebar({
                 </SkeletonRow>
               ))
             ) : saved.length === 0 ? (
-              <p className="text-xs text-dim py-4">No saved requests yet</p>
+              <p className="text-body text-dim py-4">No saved requests yet</p>
             ) : search ? (
               filtered.length === 0
-                ? <p className="text-xs text-dim py-4">No matches</p>
+                ? <p className="text-body text-dim py-4">No matches</p>
                 : filtered.map(e => renderSavedRow(e, true))
             ) : (
               groups.map(([groupName, entries]) => (
@@ -421,7 +421,7 @@ export default function Sidebar({
             <div className="flex items-center gap-2 flex-1 min-w-0 bg-surface-raised border border-border px-2.5 py-2">
               <Search size={11} className="text-dim shrink-0" />
               <input
-                className="flex-1 bg-transparent text-[13px] placeholder-dim focus:outline-none text-text min-w-0"
+                className="flex-1 bg-transparent text-body placeholder-dim focus:outline-none text-text min-w-0"
                 placeholder="Filter by URL or method…"
                 value={historySearch}
                 onChange={e => setHistorySearch(e.target.value)}
@@ -442,23 +442,23 @@ export default function Sidebar({
                 </SkeletonRow>
               ))
             ) : history.length === 0 ? (
-              <p className="text-xs text-dim py-4">No history yet</p>
+              <p className="text-body text-dim py-4">No history yet</p>
             ) : filteredHistory.length === 0 ? (
-              <p className="text-xs text-dim py-4">No matches</p>
+              <p className="text-body text-dim py-4">No matches</p>
             ) : filteredHistory.map(entry => (
               <div key={entry.id} className="flex items-center group/hrow hover:bg-surface-raised transition-colors">
                 <button onClick={() => onRestoreHistory(entry)}
                   className="flex items-center gap-2.5 pl-3.5 pr-1 py-2 flex-1 min-w-0 text-left">
-                  <span className={`text-[11px] font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
+                  <span className={`text-micro font-semibold font-mono shrink-0 w-[34px] ${methodColor(entry.method)}`}>{entry.method}</span>
                   {entry.urlHl?.length ? (
-                    <span className="text-xs text-soft truncate flex-1 font-mono">
+                    <span className="text-body text-soft truncate flex-1 font-mono">
                       <Hl text={entry.url} indices={entry.urlHl} />
                     </span>
                   ) : (
-                    <MiddleTruncate text={entry.url} className="text-xs text-soft flex-1 font-mono" />
+                    <MiddleTruncate text={entry.url} className="text-body text-soft flex-1 font-mono" />
                   )}
                   {entry.status && (
-                    <span className={`text-xs shrink-0 ${entry.status < 300 ? 'text-success' : 'text-warning'}`}>{entry.status}</span>
+                    <span className={`text-body shrink-0 ${entry.status < 300 ? 'text-success' : 'text-warning'}`}>{entry.status}</span>
                   )}
                 </button>
                 <button

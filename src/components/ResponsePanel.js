@@ -41,7 +41,7 @@ function HeaderRow({ name, value }) {
   try { prettyJson = JSON.stringify(JSON.parse(value), null, 2); } catch {}
 
   return (
-    <div className="flex gap-3 py-1.5 border-b border-border-subtle last:border-0 text-sm">
+    <div className="flex gap-3 py-1.5 border-b border-border-subtle last:border-0 text-body">
       <a
         href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/${name}`}
         target="_blank"
@@ -54,13 +54,13 @@ function HeaderRow({ name, value }) {
         <div className="flex items-start gap-2">
           <span className="text-text break-all flex-1">{value}</span>
           {prettyJson && (
-            <button onClick={() => setExpanded(v => !v)} className="text-xs text-dim hover:text-text transition-colors shrink-0 mt-0.5">
+            <button onClick={() => setExpanded(v => !v)} className="text-body text-dim hover:text-text transition-colors shrink-0 mt-0.5">
               {expanded ? '▴' : '▾'}
             </button>
           )}
         </div>
         {prettyJson && expanded && (
-          <pre className="mt-1.5 text-xs bg-surface-raised p-2 overflow-auto max-h-40 text-text leading-relaxed font-mono">{prettyJson}</pre>
+          <pre className="mt-1.5 text-body bg-surface-raised p-2 overflow-auto max-h-40 text-text leading-relaxed font-mono">{prettyJson}</pre>
         )}
       </div>
     </div>
@@ -83,25 +83,25 @@ function ExtractPopup({ value, suggestedName, position, onSave, onClose }) {
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="fixed z-50 bg-surface-raised border border-border shadow-2xl p-3 w-56 animate-fade-up" style={{ left, top }}>
-        <p className="text-xs text-muted mb-2">Save as environment variable</p>
+        <p className="text-body text-muted mb-2">Save as environment variable</p>
         <div className="flex items-center gap-1 bg-surface border border-border px-2 py-1.5 mb-2">
-          <span className="text-dim text-xs select-none">{'{{'}</span>
+          <span className="text-dim text-body select-none">{'{{'}</span>
           <input
             autoFocus
-            className="flex-1 bg-transparent text-xs focus:outline-none text-text min-w-0"
+            className="flex-1 bg-transparent text-body focus:outline-none text-text min-w-0"
             placeholder="variable_name"
             value={name}
             onChange={e => setName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && name.trim()) onSave(name.trim(), value); }}
           />
-          <span className="text-dim text-xs select-none">{'}}'}</span>
+          <span className="text-dim text-body select-none">{'}}'}</span>
         </div>
         <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="text-xs text-muted hover:text-text transition-colors px-2 py-1">Cancel</button>
+          <button onClick={onClose} className="text-body text-muted hover:text-text transition-colors px-2 py-1">Cancel</button>
           <button
             onClick={() => { if (name.trim()) onSave(name.trim(), value); }}
             disabled={!name.trim()}
-            className="text-xs bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 transition-colors"
+            className="text-body bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1 transition-colors"
           >
             Save
           </button>
@@ -182,7 +182,7 @@ function JsonNode({ nodeKey, value, depth, path, onExtract, onCopyPath, getIsOpe
         <span className="text-muted ml-0.5">{isArr ? '[' : '{'}</span>
         {!open && (
           <>
-            <span className="text-dim text-xs mx-1.5">
+            <span className="text-dim text-body mx-1.5">
               {isArr
                 ? `${entries.length} ${entries.length === 1 ? 'item' : 'items'}`
                 : `${entries.length} ${entries.length === 1 ? 'key' : 'keys'}`}
@@ -266,7 +266,7 @@ function JsonTree({ body, onExtract, onCopyPath }) {
     : null;
 
   return (
-    <div className="font-mono text-[13px]">
+    <div className="font-mono text-body">
       <div className="sticky top-0 z-10 px-4 py-2.5 bg-surface-raised border-b border-border-subtle">
         <div className="flex gap-2 items-center">
           <div className="relative flex-1">
@@ -276,7 +276,7 @@ function JsonTree({ body, onExtract, onCopyPath }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search keys and values…"
-              className="w-full bg-surface-raised border border-border pl-7 pr-6 py-1.5 text-xs placeholder-dim focus:outline-none focus:border-accent/40 focus:bg-surface-raised transition-colors"
+              className="w-full bg-surface-raised border border-border pl-7 pr-6 py-1.5 text-body placeholder-dim focus:outline-none focus:border-accent/40 focus:bg-surface-raised transition-colors"
             />
             {search && (
               <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-dim hover:text-text transition-colors">
@@ -296,26 +296,26 @@ function JsonTree({ body, onExtract, onCopyPath }) {
           )}
         </div>
         {q && flat && (
-          <p className="text-[11px] text-dim mt-1.5">{flat.length} result{flat.length !== 1 ? 's' : ''}</p>
+          <p className="text-micro text-dim mt-1.5">{flat.length} result{flat.length !== 1 ? 's' : ''}</p>
         )}
       </div>
 
       <div className="p-4">
         {flat ? (
           flat.length === 0 ? (
-            <p className="text-dim text-xs py-2">No results for "{search}"</p>
+            <p className="text-dim text-body py-2">No results for "{search}"</p>
           ) : (
             <div className="flex flex-col gap-0.5">
               {flat.slice(0, 200).map(({ path, value }) => (
                 <div key={path} className="flex items-baseline gap-2 group hover:bg-[rgba(242,237,228,.04)] px-1 -mx-1 py-0.5">
                   <span
-                    className="text-accent/60 text-xs cursor-pointer hover:text-accent transition-colors shrink-0 truncate max-w-[180px]"
+                    className="text-accent/60 text-body cursor-pointer hover:text-accent transition-colors shrink-0 truncate max-w-[180px]"
                     onClick={() => onCopyPath(path)}
                     title={path}
                   >
                     {path}
                   </span>
-                  <span className="text-dim text-xs shrink-0">→</span>
+                  <span className="text-dim text-body shrink-0">→</span>
                   <span className={
                     value === null ? 'text-muted' :
                     typeof value === 'string' ? 'text-info break-all' :
@@ -327,7 +327,7 @@ function JsonTree({ body, onExtract, onCopyPath }) {
                 </div>
               ))}
               {flat.length > 200 && (
-                <p className="text-dim text-xs mt-2">+{flat.length - 200} more — narrow your search</p>
+                <p className="text-dim text-body mt-2">+{flat.length - 200} more — narrow your search</p>
               )}
             </div>
           )
@@ -379,7 +379,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
   }
 
   function renderBody(body) {
-    const preCls = 'p-4 text-sm text-text overflow-x-auto whitespace-pre-wrap break-words leading-relaxed font-mono bg-surface-raised';
+    const preCls = 'p-4 text-body text-text overflow-x-auto whitespace-pre-wrap break-words leading-relaxed font-mono bg-surface-raised';
 
     if (rawMode || response?.streaming) {
       return (
@@ -443,8 +443,8 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       <div className="flex flex-col items-center justify-center h-full min-h-48 gap-4 select-none pointer-events-none">
         <ArrowRight size={30} strokeWidth={1.5} className="text-accent opacity-70" />
         <div className="text-center">
-          <p className="text-[13.5px] font-medium text-text/85 whitespace-nowrap">No response yet</p>
-          <p className="text-xs text-dim mt-1 max-w-[220px] leading-relaxed">Send a request and the response lands right here.</p>
+          <p className="text-body font-medium text-text/85 whitespace-nowrap">No response yet</p>
+          <p className="text-body text-dim mt-1 max-w-[220px] leading-relaxed">Send a request and the response lands right here.</p>
         </div>
       </div>
     );
@@ -453,7 +453,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
   if (response.error) {
     return (
       <div className="p-4 animate-fade-up">
-        <div className="flex items-start gap-2.5 text-sm">
+        <div className="flex items-start gap-2.5 text-body">
           <span className="text-error shrink-0 mt-0.5">⚠</span>
           <span className="text-error">{response.error}</span>
         </div>
@@ -477,7 +477,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       )}
 
       {pathCopied && (
-        <div className="absolute top-14 right-4 text-xs bg-surface-raised border border-border px-2.5 py-1.5 text-text z-20 pointer-events-none animate-fade-up shadow-xl">
+        <div className="absolute top-14 right-4 text-body bg-surface-raised border border-border px-2.5 py-1.5 text-text z-20 pointer-events-none animate-fade-up shadow-xl">
           Path copied
         </div>
       )}
@@ -493,7 +493,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs transition-colors border-b-2 -mb-px ${
+              className={`flex items-center gap-1.5 px-3 py-2 text-body transition-colors border-b-2 -mb-px ${
                 activeTab === id
                   ? 'border-accent text-text'
                   : 'border-transparent text-muted hover:text-text'
@@ -510,7 +510,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
           {!hideStatusBar && (
             <div className="flex items-center gap-3 mr-2">
               {response.streaming && (
-                <div className="flex items-center gap-1 text-xs text-accent">
+                <div className="flex items-center gap-1 text-body text-accent">
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
@@ -522,29 +522,29 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
                 href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/${response.status}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`font-bold text-xs hover:underline ${statusColor(response.status)}`}
+                className={`font-bold text-body hover:underline ${statusColor(response.status)}`}
               >
                 {response.status} {response.statusText}
               </a>
-              <span className={`text-xs tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
-              <span className="text-xs text-muted">{formatSize(response.body)}</span>
+              <span className={`text-body tabular-nums ${latencyColor(response.time)}`}>{response.time}ms</span>
+              <span className="text-body text-muted">{formatSize(response.body)}</span>
             </div>
           )}
           <button
             onClick={() => setRawMode(v => !v)}
-            className={`text-xs px-2 py-1 rounded border transition-colors ${rawMode ? 'border-accent/50 text-accent bg-accent/5' : 'border-border text-muted hover:text-text hover:border-[rgba(242,237,228,.3)]'}`}
+            className={`text-body px-2 py-1 rounded border transition-colors ${rawMode ? 'border-accent/50 text-accent bg-accent/5' : 'border-border text-muted hover:text-text hover:border-[rgba(242,237,228,.3)]'}`}
           >
             Raw
           </button>
           <button
             onClick={copyBody}
-            className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
+            className="flex items-center gap-1.5 text-body text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
             <Copy size={11} />{copied ? 'Copied!' : 'Copy'}
           </button>
           <button
             onClick={downloadBody}
-            className="flex items-center gap-1.5 text-xs text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
+            className="flex items-center gap-1.5 text-body text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
             <Download size={11} />Save
           </button>
@@ -556,7 +556,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       {activeTab === 'headers' && (
         <div className="flex flex-col px-4">
           {headerEntries.length === 0 ? (
-            <p className="text-dim text-sm py-4">No headers</p>
+            <p className="text-dim text-body py-4">No headers</p>
           ) : (
             headerEntries.map(([key, value]) => <HeaderRow key={key} name={key} value={value} />)
           )}
@@ -566,21 +566,21 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
       {activeTab === 'cookies' && (
         <div className="flex flex-col gap-2 px-4 py-2">
           {cookies.length === 0 ? (
-            <p className="text-dim text-sm py-4">No cookies in response</p>
+            <p className="text-dim text-body py-4">No cookies in response</p>
           ) : cookies.map((c, i) => (
             <div key={i} className="bg-surface-raised p-3 flex flex-col gap-1.5 border border-border">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-accent font-semibold">{c.name}</span>
-                <span className="text-xs text-muted font-mono truncate">{c.value || <span className="text-dim italic">empty</span>}</span>
+                <span className="text-body font-mono text-accent font-semibold">{c.name}</span>
+                <span className="text-body text-muted font-mono truncate">{c.value || <span className="text-dim italic">empty</span>}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
-                {c.path && <span className="text-xs text-dim">Path: <span className="text-muted font-mono">{c.path}</span></span>}
-                {c.domain && <span className="text-xs text-dim">Domain: <span className="text-muted font-mono">{c.domain}</span></span>}
-                {c.expires && <span className="text-xs text-dim">Expires: <span className="text-muted">{c.expires}</span></span>}
-                {c.maxAge && <span className="text-xs text-dim">Max-Age: <span className="text-muted">{c.maxAge}s</span></span>}
-                {c.sameSite && <span className="text-xs text-dim">SameSite: <span className="text-muted">{c.sameSite}</span></span>}
-                {c.httpOnly && <span className="text-xs px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">HttpOnly</span>}
-                {c.secure && <span className="text-xs px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">Secure</span>}
+                {c.path && <span className="text-body text-dim">Path: <span className="text-muted font-mono">{c.path}</span></span>}
+                {c.domain && <span className="text-body text-dim">Domain: <span className="text-muted font-mono">{c.domain}</span></span>}
+                {c.expires && <span className="text-body text-dim">Expires: <span className="text-muted">{c.expires}</span></span>}
+                {c.maxAge && <span className="text-body text-dim">Max-Age: <span className="text-muted">{c.maxAge}s</span></span>}
+                {c.sameSite && <span className="text-body text-dim">SameSite: <span className="text-muted">{c.sameSite}</span></span>}
+                {c.httpOnly && <span className="text-body px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">HttpOnly</span>}
+                {c.secure && <span className="text-body px-1.5 py-0.5 rounded bg-[rgba(242,237,228,.08)] text-muted">Secure</span>}
               </div>
             </div>
           ))}
@@ -591,8 +591,8 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
         <div className="flex flex-col gap-4 px-4 py-3">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted">Total (server round-trip)</span>
-              <span className={`text-sm font-mono font-semibold ${latencyColor(response.time)}`}>{response.time}ms</span>
+              <span className="text-body text-muted">Total (server round-trip)</span>
+              <span className={`text-body font-mono font-semibold ${latencyColor(response.time)}`}>{response.time}ms</span>
             </div>
             <div className="h-1.5 bg-[rgba(242,237,228,.08)] overflow-hidden">
               <div
@@ -600,14 +600,14 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
                 style={{ width: `${Math.min(100, (response.time / 3000) * 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs text-dim">
+            <div className="flex justify-between text-body text-dim">
               <span>0ms</span>
               <span className="text-success/60">200ms</span>
               <span className="text-warning/60">1s</span>
               <span className="text-error/60">3s+</span>
             </div>
           </div>
-          <p className="text-xs text-dim">Measures proxy-side fetch time. Does not include client↔server transit.</p>
+          <p className="text-body text-dim">Measures proxy-side fetch time. Does not include client↔server transit.</p>
         </div>
       )}
     </div>

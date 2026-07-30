@@ -81,7 +81,7 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
         <div className="border-b border-border px-4 py-3">
           <input
             autoFocus
-            className="w-full bg-transparent text-sm placeholder-dim focus:outline-none"
+            className="w-full bg-transparent text-body placeholder-dim focus:outline-none"
             placeholder="Search requests, environments, actions…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -90,10 +90,10 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
 
         <div className="max-h-96 overflow-y-auto">
           {allItems.length === 0 ? (
-            <p className="text-muted text-sm p-4">No results</p>
+            <p className="text-muted text-body p-4">No results</p>
           ) : sections.map((section) => (
             <div key={section.label}>
-              <div className="px-4 py-1.5 text-xs text-dim uppercase tracking-wider bg-canvas sticky top-0">
+              <div className="px-4 py-1.5 text-body text-dim uppercase tracking-wider bg-canvas sticky top-0">
                 {section.label}
               </div>
               {section.items.map((item) => {
@@ -109,14 +109,14 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
                   >
                     {item.type === 'saved' && (
                       <>
-                        <span className={`text-xs font-bold w-14 shrink-0 ${methodColor(item.data.method)}`}>
+                        <span className={`text-body font-bold w-14 shrink-0 ${methodColor(item.data.method)}`}>
                           {item.data.method}
                         </span>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm truncate">
+                          <span className="text-body truncate">
                             <Hl text={item.data.name} indices={item.nameIndices} />
                           </span>
-                          <span className={`text-xs truncate ${active ? 'text-text' : 'text-muted'}`}>
+                          <span className={`text-body truncate ${active ? 'text-text' : 'text-muted'}`}>
                             <Hl text={item.data.url} indices={item.urlIndices} />
                           </span>
                         </div>
@@ -124,21 +124,21 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
                     )}
                     {item.type === 'env' && (
                       <>
-                        <span className="text-xs text-muted w-14 shrink-0">ENV</span>
+                        <span className="text-body text-muted w-14 shrink-0">ENV</span>
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm truncate">
+                          <span className="text-body truncate">
                             <Hl text={item.data.name} indices={item.nameIndices} />
                           </span>
                           {item.data.id === activeEnvId && (
-                            <span className="text-xs text-accent shrink-0">active</span>
+                            <span className="text-body text-accent shrink-0">active</span>
                           )}
                         </div>
                       </>
                     )}
                     {item.type === 'action' && (
                       <>
-                        <span className="text-xs text-muted w-14 shrink-0">⚡</span>
-                        <span className="text-sm">
+                        <span className="text-body text-muted w-14 shrink-0">⚡</span>
+                        <span className="text-body">
                           <Hl text={item.data.label} indices={item.nameIndices} />
                         </span>
                       </>
@@ -150,7 +150,7 @@ export default function CommandPalette({ saved, envSets, activeEnvId, onClose, o
           ))}
         </div>
 
-        <div className="border-t border-border px-4 py-2 flex gap-4 text-xs text-dim">
+        <div className="border-t border-border px-4 py-2 flex gap-4 text-body text-dim">
           <span>↑↓ navigate</span>
           <span>↵ select</span>
           <span>esc close</span>

@@ -23,8 +23,8 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
     <div className="fixed inset-0 bg-black/60 flex items-start justify-center z-20 pt-24" onClick={onClose}>
       <div className="bg-surface border border-border rounded-xl w-full max-w-lg p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold">Environments</h2>
-          <button onClick={onClose} className="text-muted hover:text-text text-lg leading-none">×</button>
+          <h2 className="text-body font-bold">Environments</h2>
+          <button onClick={onClose} className="text-muted hover:text-text text-body leading-none">×</button>
         </div>
         <div className="flex gap-1 flex-wrap mb-4">
           {envSets.map((s) => {
@@ -32,12 +32,12 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
             return (
               <div
                 key={s.id}
-                className={`flex items-center gap-1 px-3 py-1 rounded text-xs transition-colors ${isActive ? 'bg-accent text-text' : 'bg-surface-raised text-muted hover:text-text'}`}
+                className={`flex items-center gap-1 px-3 py-1 rounded text-body transition-colors ${isActive ? 'bg-accent text-text' : 'bg-surface-raised text-muted hover:text-text'}`}
               >
                 {renamingId === s.id ? (
                   <input
                     autoFocus
-                    className="bg-transparent outline-none w-24 text-xs"
+                    className="bg-transparent outline-none w-24 text-body"
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     onBlur={commitRename}
@@ -61,9 +61,9 @@ export default function EnvModal({ envSets, activeEnvId, onClose, onSwitchEnv, o
               </div>
             );
           })}
-          <button onClick={onAddEnv} className="px-3 py-1 text-xs text-muted hover:text-text transition-colors">+ Add</button>
+          <button onClick={onAddEnv} className="px-3 py-1 text-body text-muted hover:text-text transition-colors">+ Add</button>
         </div>
-        <p className="text-xs text-muted mb-4">
+        <p className="text-body text-muted mb-4">
           Use <code className="bg-surface-raised px-1 rounded text-text">{'{{variable}}'}</code> in your URL, headers, or body.
           {activeEnvId && <span className="ml-2 text-dim">Click the active tab name to rename it.</span>}
         </p>

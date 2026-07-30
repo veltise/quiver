@@ -80,27 +80,27 @@ export default function ParamsEditor({ url, onChange }) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10.5px] uppercase tracking-[0.09em] text-dim">Query parameters</span>
-        <button onClick={() => add('key')} className="text-xs text-accent hover:text-accent-hover transition-colors">
+        <span className="text-micro uppercase tracking-[0.09em] text-dim">Query parameters</span>
+        <button onClick={() => add('key')} className="text-body text-accent hover:text-accent-hover transition-colors">
           + Add param
         </button>
       </div>
       <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border">
-        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Key</span>
-        <span className="text-[11px] uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Value</span>
+        <span className="text-micro uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Key</span>
+        <span className="text-micro uppercase tracking-[0.08em] text-dim font-semibold px-1.5 py-1.5">Value</span>
       </div>
       {params.map(p => (
         <div key={p.id} className={`grid grid-cols-[1fr_1fr_1.25rem] border-b border-border-subtle last:border-0 group/row hover:bg-[rgba(242,237,228,.04)] ${p.id === lastAdded ? 'animate-row-in' : ''}`}>
           <input
             ref={p.id === lastAdded ? keyRef : undefined}
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono text-text placeholder-dim focus:outline-none w-full"
             placeholder="key"
             value={p.key}
             onChange={e => update(p.id, 'key', e.target.value)}
           />
           <input
             ref={p.id === lastAdded ? valueRef : undefined}
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono text-text placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono text-text placeholder-dim focus:outline-none w-full"
             placeholder="value"
             value={p.value}
             onChange={e => update(p.id, 'value', e.target.value)}
@@ -118,7 +118,7 @@ export default function ParamsEditor({ url, onChange }) {
       {params.length === 0 && (
         <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border-subtle opacity-50 hover:opacity-100 hover:bg-[rgba(242,237,228,.04)] focus-within:opacity-100 transition-all">
           <input
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono placeholder-dim focus:outline-none w-full"
             placeholder="key"
             aria-label="Param key"
             value=""
@@ -127,7 +127,7 @@ export default function ParamsEditor({ url, onChange }) {
             readOnly
           />
           <input
-            className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
+            className="bg-transparent px-1.5 py-2.5 text-body font-mono placeholder-dim focus:outline-none w-full"
             placeholder="value"
             aria-label="Param value"
             value=""

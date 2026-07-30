@@ -24,23 +24,23 @@ export default function CurlImportModal({ onImport, onCancel }) {
 
   return (
     <ModalShell onClose={onCancel} maxWidth="max-w-lg">
-      <h2 className="text-sm font-bold mb-3">Import from cURL</h2>
+      <h2 className="text-body font-bold mb-3">Import from cURL</h2>
       <textarea
         autoFocus
-        className="w-full h-40 bg-surface-raised border border-border rounded px-3 py-2 text-sm placeholder-dim focus:outline-none focus:border-border-strong resize-none font-mono"
+        className="w-full h-40 bg-surface-raised border border-border rounded px-3 py-2 text-body placeholder-dim focus:outline-none focus:border-border-strong resize-none font-mono"
         placeholder={"curl 'https://api.example.com/users' \\\n  -H 'Authorization: Bearer token' \\\n  -d '{\"key\": \"value\"}'"}
         value={value}
         onChange={(e) => { setValue(e.target.value); setError(''); }}
       />
-      {error && <p className="text-error text-xs mt-1">{error}</p>}
+      {error && <p className="text-error text-body mt-1">{error}</p>}
       <div className="flex gap-2 justify-end mt-3">
-        <button type="button" onClick={onCancel} className="px-4 py-1.5 text-sm text-muted hover:text-text transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-1.5 text-body text-muted hover:text-text transition-colors">
           Cancel
         </button>
         <button
           onClick={handleImport}
           disabled={!value.trim()}
-          className="px-4 py-1.5 text-sm bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+          className="px-4 py-1.5 text-body bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
         >
           Import
         </button>

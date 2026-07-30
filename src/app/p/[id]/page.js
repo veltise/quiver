@@ -10,7 +10,7 @@ export default async function SharedPage({ params }) {
   if (!await rateLimit(`read:${ip}`, { limit: 60, window: 60 })) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
-        <p className="text-error font-mono text-sm">Too many requests. Try again in a moment.</p>
+        <p className="text-error font-mono text-body">Too many requests. Try again in a moment.</p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export default async function SharedPage({ params }) {
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
-        <p className="text-error font-mono text-sm">Share link not found.</p>
+        <p className="text-error font-mono text-body">Share link not found.</p>
       </div>
     );
   }

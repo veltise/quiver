@@ -7,7 +7,7 @@ export default function Toast({ toasts }) {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`px-4 py-2.5 rounded-lg text-sm shadow-lg ${
+          className={`px-4 py-2.5 rounded-lg text-body shadow-lg ${
             t.type === 'error'
               ? 'bg-error/10 text-error border border-error/30'
               : 'bg-surface-raised text-text border border-border'

@@ -125,45 +125,45 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
       <div className="bg-surface border border-border rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold">Collection Runner</h2>
+            <h2 className="text-body font-semibold">Collection Runner</h2>
             {hasRun && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-body">
                 <span className="text-success">{passed} passed</span>
                 <span className="text-dim">·</span>
                 <span className="text-error">{failed} failed</span>
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-muted hover:text-text transition-colors text-lg leading-none">×</button>
+          <button onClick={onClose} className="text-muted hover:text-text transition-colors text-body leading-none">×</button>
         </div>
 
         <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
-          <button onClick={toggleAll} disabled={running} className="text-xs text-muted hover:text-text transition-colors disabled:opacity-40">
+          <button onClick={toggleAll} disabled={running} className="text-body text-muted hover:text-text transition-colors disabled:opacity-40">
             {selected.size === saved.length ? 'Deselect all' : 'Select all'}
           </button>
-          <span className="text-dim text-xs">·</span>
-          <span className="text-xs text-muted">{toRun.length} selected</span>
+          <span className="text-dim text-body">·</span>
+          <span className="text-body text-muted">{toRun.length} selected</span>
           <div className="flex items-center gap-1.5 ml-auto">
-            <label className="text-xs text-muted">Delay</label>
+            <label className="text-body text-muted">Delay</label>
             <input
               type="number"
               min="0"
               max="60"
               value={delay}
               onChange={(e) => setDelay(Math.max(0, parseInt(e.target.value) || 0))}
-              className="w-12 bg-surface-raised border border-border rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-border-strong font-mono"
+              className="w-12 bg-surface-raised border border-border rounded px-2 py-1 text-body text-center focus:outline-none focus:border-border-strong font-mono"
             />
-            <span className="text-xs text-muted">s</span>
+            <span className="text-body text-muted">s</span>
           </div>
           {running ? (
-            <button onClick={() => { abortRef.current = true; }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-error hover:bg-error rounded transition-colors">
+            <button onClick={() => { abortRef.current = true; }} className="flex items-center gap-1.5 px-3 py-1.5 text-body bg-error hover:bg-error rounded transition-colors">
               <Square size={10} />Stop
             </button>
           ) : (
             <button
               onClick={runAll}
               disabled={!toRun.length}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-body bg-accent hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rounded transition-colors"
             >
               <Play size={10} />Run
             </button>
@@ -172,11 +172,11 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
 
         <div className="overflow-y-auto flex-1">
           {saved.length === 0 ? (
-            <p className="text-center text-dim text-sm py-10">No saved requests yet</p>
+            <p className="text-center text-dim text-body py-10">No saved requests yet</p>
           ) : (
             Object.entries(groups).map(([group, items]) => (
               <div key={group}>
-                <div className="px-5 py-2 text-xs text-dim uppercase tracking-wider bg-surface sticky top-0">
+                <div className="px-5 py-2 text-body text-dim uppercase tracking-wider bg-surface sticky top-0">
                   {group}
                 </div>
                 {items.map((entry) => {
@@ -190,16 +190,16 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
                         disabled={running}
                         className="accent-indigo-500 shrink-0"
                       />
-                      <span className={`text-xs font-bold w-14 shrink-0 ${methodColor(entry.method)}`}>{entry.method}</span>
-                      <span className="text-sm text-text flex-1 truncate">{entry.name}</span>
+                      <span className={`text-body font-bold w-14 shrink-0 ${methodColor(entry.method)}`}>{entry.method}</span>
+                      <span className="text-body text-text flex-1 truncate">{entry.name}</span>
                       <div className="flex items-center gap-2 shrink-0 min-w-[120px] justify-end">
                         {!r && <span />}
-                        {r?.status === 'pending' && <span className="text-xs text-dim">queued</span>}
+                        {r?.status === 'pending' && <span className="text-body text-dim">queued</span>}
                         {r?.status === 'running' && <Loader2 size={13} className="text-accent animate-spin" />}
                         {(r?.status === 'pass' || r?.status === 'fail') && (
                           <>
-                            <span className={`text-xs font-mono font-bold ${r.status === 'pass' ? 'text-success' : 'text-error'}`}>{r.httpStatus}</span>
-                            <span className="text-xs text-dim font-mono">{r.time}ms</span>
+                            <span className={`text-body font-mono font-bold ${r.status === 'pass' ? 'text-success' : 'text-error'}`}>{r.httpStatus}</span>
+                            <span className="text-body text-dim font-mono">{r.time}ms</span>
                             {r.status === 'pass'
                               ? <CheckCircle2 size={13} className="text-success" />
                               : <XCircle size={13} className="text-error" />}
@@ -207,7 +207,7 @@ export default function CollectionRunner({ saved, envVars, requestTimeout, onClo
                         )}
                         {r?.status === 'error' && (
                           <>
-                            <span className="text-xs text-warning truncate max-w-[140px]" title={r.error}>{r.error}</span>
+                            <span className="text-body text-warning truncate max-w-[140px]" title={r.error}>{r.error}</span>
                             <XCircle size={13} className="text-warning" />
                           </>
                         )}
