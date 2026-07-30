@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import {
-  PanelLeftOpen, FolderOpen, Clock,
+  FolderOpen, Clock,
   ChevronRight, Trash2, MoreHorizontal, Pencil, Ban, Search, X, Check,
 } from 'lucide-react';
 import { methodColor, fuzzyScore, extractGroup, scoreAndFilterSaved } from '@/lib/utils';
@@ -90,20 +90,6 @@ function SkeletonRow({ children }) {
       <div className="w-8 h-2.5 bg-[rgba(242,237,228,.06)] shrink-0" />
       {children}
     </div>
-  );
-}
-
-function TrajectoryNote() {
-  return (
-    <>
-      <div className="h-px bg-border-subtle my-1.5" />
-      <div className="pb-4">
-        <p className="text-[10.5px] uppercase tracking-[0.09em] text-dim mb-2">Trajectory</p>
-        <p className="text-xs text-muted leading-[1.6]">
-          Every call takes the same path: aim, loose, then land. Nothing hidden in between.
-        </p>
-      </div>
-    </>
   );
 }
 
@@ -271,12 +257,13 @@ export default function Sidebar({
     const label = autoNamed && path && path !== '/' ? path : entry.name;
     return (
       <div key={entry.id} data-entry-id={entry.id}
-        className={`qv-row relative flex items-center pr-1.5 transition-colors group/row ${
+        className={`qv-row relative flex items-center gap-0.5 pr-2 transition-colors group/row ${
           isActive ? 'qv-row-active bg-surface-raised' :
           focused ? 'bg-surface-raised' :
           'hover:bg-surface-raised'
         }`}
-        onMouseEnter={() => setFocusedId(entry.id)}>
+        onMouseEnter={() => setFocusedId(entry.id)}
+        onMouseLeave={() => setFocusedId(prev => (prev === entry.id ? null : prev))}>
         <span className="qv-nock" />
         {/* Padding lives on the button, not the row, so the whole row area is clickable */}
         <button onClick={() => { onRestoreSaved(entry); setSearch(''); setFocusedId(null); }} className="flex items-center gap-2.5 flex-1 text-left min-w-0 pl-3.5 py-2">
@@ -301,13 +288,13 @@ export default function Sidebar({
         <button onClick={e => { e.stopPropagation(); handleDeleteClick(entry.id); }}
           title={confirmDeleteId === entry.id ? 'Click again to confirm' : 'Delete'}
           aria-label={confirmDeleteId === entry.id ? `Confirm delete ${entry.name}` : `Delete ${entry.name}`}
-          className={`transition-all p-1 shrink-0 rounded ${confirmDeleteId === entry.id
+          className={`transition-all p-1.5 shrink-0 rounded ${confirmDeleteId === entry.id
             ? 'opacity-100 text-error bg-error/10'
             : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-dim hover:text-error'}`}>
           {confirmDeleteId === entry.id ? <Check size={11} /> : <Trash2 size={11} />}
         </button>
         <button onClick={e => openMenu(e, entry)} title="More" aria-label={`More actions for ${entry.name}`}
-          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-muted hover:text-text transition-all p-1 shrink-0 rounded hover:bg-[rgba(242,237,228,.06)]">
+          className="opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100 text-muted hover:text-text transition-all p-1.5 shrink-0 rounded hover:bg-[rgba(242,237,228,.06)]">
           <MoreHorizontal size={12} />
         </button>
       </div>
@@ -317,8 +304,9 @@ export default function Sidebar({
   if (collapsed && !mobileOpen) {
     return (
       <div className="hidden md:flex flex-col w-10 border-r border-border-subtle bg-surface shrink-0 items-center pt-3 gap-1">
-        <button onClick={onToggle} title="Expand sidebar" className="text-dim hover:text-text transition-all p-2 rounded-md hover:bg-[rgba(242,237,228,.06)] hover:scale-110">
-          <PanelLeftOpen size={13} />
+        <button onClick={onToggle} title="Expand sidebar" aria-label="Expand sidebar"
+          className="qv-ghost-btn shrink-0 w-[22px] h-[22px] flex items-center justify-center text-[11px] leading-none text-muted">
+          ⟩
         </button>
         <div className="w-4 h-px bg-border-subtle my-1" />
         <button onClick={() => { setTab('collections'); onToggle(); }} title="Collections" className="text-dim hover:text-text transition-all p-2 rounded-md hover:bg-[rgba(242,237,228,.06)] relative">
@@ -423,7 +411,6 @@ export default function Sidebar({
                 </div>
               ))
             )}
-            <TrajectoryNote />
           </div>
         </div>
       )}
@@ -483,7 +470,6 @@ export default function Sidebar({
                 </button>
               </div>
             ))}
-            <TrajectoryNote />
           </div>
         </div>
       )}

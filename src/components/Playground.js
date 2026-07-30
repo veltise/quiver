@@ -126,13 +126,21 @@ export default function Playground({ initialState, isShared }) {
   function setActiveRequest(val) { updateTab(activeTabId, { activeRequest: val }); }
 
   const envVars = useMemo(() => envSets.find((s) => s.id === activeEnvId)?.vars ?? [], [envSets, activeEnvId]);
-  // Header breadcrumb: the active request's collection, resolved from the saved list.
-  const breadcrumbCollection = useMemo(() => {
-    if (!activeRequest) return '';
+  // Header breadcrumb: the active request's collection, and whether its name is
+  // still the auto-suggested one. An untouched auto-name just repeats the host
+  // the collection segment already shows (e.g. "jsonplaceholder.typicode.com /
+  // GET jsonplaceholder.typicode.com") — once it's renamed, both segments carry
+  // real information and are worth showing together.
+  const breadcrumb = useMemo(() => {
+    if (!activeRequest) return null;
     const entry = saved.find((s) => s.id === activeRequest.id);
-    if (!entry) return '';
-    return entry.collection || extractGroup(entry.url ?? '');
+    if (!entry) return { collection: '', autoNamed: false };
+    return {
+      collection: entry.collection || extractGroup(entry.url ?? ''),
+      autoNamed: entry.name === suggestName(entry.url ?? ''),
+    };
   }, [activeRequest, saved]);
+  const suppressBreadcrumbName = !!(breadcrumb?.collection && breadcrumb.autoNamed);
   const showBody = !['GET', 'HEAD'].includes(req.method);
   const jsonInvalid = isJsonInvalid(req.bodyType, req.body);
 
@@ -924,8 +932,9 @@ export default function Playground({ initialState, isShared }) {
             <>
               <span className="hidden md:block w-px h-4 bg-border shrink-0" />
               <span className="hidden md:block text-[13px] text-dim truncate min-w-0">
-                {breadcrumbCollection && <>{breadcrumbCollection} <span className="opacity-50">/</span> </>}
-                <span className="text-muted">{activeRequest.name}</span>
+                {breadcrumb?.collection}
+                {breadcrumb?.collection && !suppressBreadcrumbName && <span className="opacity-50"> / </span>}
+                {!suppressBreadcrumbName && <span className="text-muted">{activeRequest.name}</span>}
               </span>
             </>
           )}
@@ -940,18 +949,14 @@ export default function Playground({ initialState, isShared }) {
 
         {/* Right: actions */}
         <div className="flex items-center gap-1 md:gap-1.5 shrink-0 ml-4">
-          <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
-            className="chamfer-sm flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-semibold">
-            <Bookmark size={13} /><span className="hidden md:inline">Save</span>
-          </button>
-          <button suppressHydrationWarning onClick={() => setActiveModal('share')} disabled={isSharing || !req.url?.trim()}
-            className={`${HDR_BTN} flex items-center gap-1.5 px-2 md:px-4`}>
-            <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
-          </button>
           <button onClick={() => setActiveModal('live')}
             className="flex items-center gap-1.5 text-xs px-2 py-2 text-error hover:brightness-110 transition-all active:scale-95 font-semibold">
             <PulsingDot className="h-1.5 w-1.5 shrink-0" />
             <span className="hidden md:inline">Live</span>
+          </button>
+          <button suppressHydrationWarning onClick={() => setActiveModal('share')} disabled={isSharing || !req.url?.trim()}
+            className={`${HDR_BTN} flex items-center gap-1.5 px-2 md:px-4`}>
+            <Link2 size={13} /><span className="hidden md:inline">{isSharing ? 'Saving…' : copied ? '✓ Copied' : 'Share'}</span>
           </button>
           <div className="relative" ref={toolsRef}>
             <button className="flex items-center gap-1 text-[13px] px-2 py-2 text-muted hover:text-text transition-colors" onClick={() => setShowTools(v => !v)}>
@@ -993,6 +998,10 @@ export default function Playground({ initialState, isShared }) {
             className="hidden md:flex items-center justify-center w-8 h-8 shrink-0 border border-border hover:border-border-strong hover:bg-[rgba(242,237,228,.04)] text-muted hover:text-text transition-colors">
             <Keyboard size={14} />
           </button>
+          <button suppressHydrationWarning onClick={() => setActiveModal('save')} disabled={!req.url?.trim()}
+            className="chamfer-sm flex items-center gap-1.5 text-sm px-2 md:px-4 py-2 bg-accent hover:bg-accent-hover text-ink disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 font-semibold">
+            <Bookmark size={13} /><span className="hidden md:inline">Save</span>
+          </button>
         </div>
       </header>
 
@@ -1026,7 +1035,7 @@ export default function Playground({ initialState, isShared }) {
           <div className="hidden md:flex items-center border-b border-border bg-surface overflow-x-auto shrink-0 min-h-0">
             {tabs.map(tab => {
               const isActive = tab.id === activeTabId;
-              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-border shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-t-2 ${isActive ? 'bg-surface-raised text-text border-t-accent' : 'text-muted hover:text-text hover:bg-surface-raised/30 border-t-transparent'}`;
+              const tabClasses = `flex items-center gap-1.5 px-3 py-2.5 text-xs border-r border-border shrink-0 min-w-[160px] max-w-[240px] group transition-colors border-b-2 ${isActive ? 'bg-surface-raised text-text border-b-accent' : 'text-muted hover:text-text hover:bg-surface-raised/30 border-b-transparent'}`;
               if (editingTab?.id === tab.id) {
                 return (
                   <div key={tab.id} className={tabClasses}>

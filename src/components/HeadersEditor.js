@@ -80,6 +80,7 @@ export default function HeadersEditor({ headers, onChange }) {
             placeholder="value"
             value={h.value}
             onChange={e => update(h.id, 'value', e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add('key'); } }}
           />
           <button
             onClick={() => remove(h.id)}
@@ -92,7 +93,7 @@ export default function HeadersEditor({ headers, onChange }) {
       ))}
       {headers.length === 0 && (
         /* Ghost placeholder row — becomes a real row on focus */
-        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border opacity-50 focus-within:opacity-100">
+        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border opacity-50 hover:opacity-100 hover:bg-[rgba(242,237,228,.04)] focus-within:opacity-100 transition-all">
           <input
             className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
             placeholder="key"

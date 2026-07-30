@@ -104,6 +104,7 @@ export default function ParamsEditor({ url, onChange }) {
             placeholder="value"
             value={p.value}
             onChange={e => update(p.id, 'value', e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add('key'); } }}
           />
           <button
             onClick={() => remove(p.id)}
@@ -115,7 +116,7 @@ export default function ParamsEditor({ url, onChange }) {
         </div>
       ))}
       {params.length === 0 && (
-        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border-subtle opacity-50 focus-within:opacity-100">
+        <div className="grid grid-cols-[1fr_1fr_1.25rem] border-b border-border-subtle opacity-50 hover:opacity-100 hover:bg-[rgba(242,237,228,.04)] focus-within:opacity-100 transition-all">
           <input
             className="bg-transparent px-1.5 py-2.5 text-xs font-mono placeholder-dim focus:outline-none w-full"
             placeholder="key"

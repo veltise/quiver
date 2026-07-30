@@ -93,6 +93,25 @@ describe('PATCH /api/saved/[id] — ownership scoping', () => {
     expect(res.status).toBe(400);
   });
 
+  // Regression: only POST /api/saved checked state size, so a row saved under the
+  // 100KB cap could be edited past it later via PATCH.
+  it('rejects a state update over the 100KB cap, even though it is validly encrypted', async () => {
+    const { client } = makeMockClient();
+    createServerClient.mockReturnValue(client);
+
+    const req = new Request('http://x', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': SESSION_ID },
+      body: JSON.stringify({
+        name: 'Renamed',
+        slug: 'renamed',
+        state: { _enc: true, iv: 'i', data: 'd'.repeat(101 * 1024) },
+      }),
+    });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(413);
+  });
+
   it('accepts a properly-encrypted state update', async () => {
     const { client } = makeMockClient();
     createServerClient.mockReturnValue(client);

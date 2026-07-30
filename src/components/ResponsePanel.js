@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Download, FileText, List, Cookie, Clock, Search, X, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { Copy, Download, FileText, List, Cookie, Clock, Search, X, ChevronRight, ChevronsDownUp, ChevronsUpDown, ArrowRight } from 'lucide-react';
 import { formatSize, statusColor, latencyColor } from '@/lib/utils';
 
 function parseCookies(headers) {
@@ -441,11 +441,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
   if (!response) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-48 gap-4 select-none pointer-events-none">
-        <svg width="60" height="20" viewBox="0 0 60 20" className="text-accent opacity-70">
-          <circle cx="3" cy="10" r="1.75" fill="currentColor" />
-          <line x1="3" y1="10" x2="40" y2="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.55" />
-          <polygon points="38,3 58,10 38,17" fill="currentColor" />
-        </svg>
+        <ArrowRight size={30} strokeWidth={1.5} className="text-accent opacity-70" />
         <div className="text-center">
           <p className="text-[13.5px] font-medium text-text/85 whitespace-nowrap">No response yet</p>
           <p className="text-xs text-dim mt-1 max-w-[220px] leading-relaxed">Send a request and the response lands right here.</p>

@@ -9,6 +9,11 @@ export async function PATCH(request, { params }) {
   const sessionId = getSessionHeader(request);
   const { name, slug, state, collection } = await request.json();
   if (!isValidSessionId(sessionId) || !name) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  // Same cap as POST /api/saved — without it, a row saved under the limit could be
+  // edited past it later, since only the create path was ever checked.
+  if (state !== undefined && JSON.stringify(state).length > 100 * 1024) {
+    return NextResponse.json({ error: 'State too large' }, { status: 413 });
+  }
   // Same rule as POST /api/saved — a saved_requests row must never hold plaintext state.
   if (state !== undefined && !isEncryptedState(state)) return NextResponse.json({ error: 'State must be encrypted' }, { status: 400 });
 
