@@ -26,7 +26,6 @@ export default function RootLayout({ children }) {
       className={`${plexSans.variable} ${plexMono.variable} h-full antialiased bg-canvas`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <div className="h-px shrink-0 bg-gradient-to-r from-transparent via-accent/70 to-transparent" />
         {children}
       </body>
     </html>

@@ -923,7 +923,7 @@ export default function Playground({ initialState, isShared }) {
       )}
 
       {/* Header */}
-      <header className="noise border-b border-border px-4 py-3 flex items-center shrink-0 bg-surface">
+      <header className="border-b border-border px-4 py-3 flex items-center shrink-0 bg-surface">
         {/* Brand + breadcrumb */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-4">
           <div className="chamfer w-6 h-6 bg-accent shrink-0" />

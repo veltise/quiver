@@ -501,7 +501,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
             >
               <Icon size={11} />
               {label}
-              {countVal != null && <span className="ml-0.5 text-dim">({countVal})</span>}
+              {countVal != null && <span className="ml-0.5 text-dim">· {countVal}</span>}
             </button>
           ))}
         </div>

@@ -19,31 +19,44 @@ export function statusBadgeClass(status) {
   return 'bg-error/15 text-error ring-1 ring-error/20';
 }
 
+// Each method gets its own hue so a column of mixed requests reads at a
+// glance, rather than every non-GET/DELETE method collapsing into the same
+// accent color. Reuses existing semantic tokens instead of raw Tailwind
+// colors: --color-warning (amber) for POST, --color-info (blue-gray) for PUT,
+// --color-share (violet) for PATCH.
 export function methodColor(method) {
   if (method === 'GET')    return 'text-success';
+  if (method === 'POST')   return 'text-warning';
+  if (method === 'PUT')    return 'text-info';
+  if (method === 'PATCH')  return 'text-share';
   if (method === 'DELETE') return 'text-error';
-  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'text-accent';
   return 'text-muted';
 }
 
 export function methodBadgeClass(method) {
   if (method === 'GET')    return 'bg-success/10 text-success ring-1 ring-success/20';
+  if (method === 'POST')   return 'bg-warning/10 text-warning ring-1 ring-warning/20';
+  if (method === 'PUT')    return 'bg-info/10 text-info ring-1 ring-info/20';
+  if (method === 'PATCH')  return 'bg-share/10 text-share ring-1 ring-share/20';
   if (method === 'DELETE') return 'bg-error/10 text-error ring-1 ring-error/20';
-  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'bg-accent/10 text-accent ring-1 ring-accent/20';
   return 'bg-[rgba(242,237,228,.06)] text-muted ring-1 ring-border';
 }
 
 export function methodBgClass(method) {
   if (method === 'GET')    return 'bg-success/10';
+  if (method === 'POST')   return 'bg-warning/10';
+  if (method === 'PUT')    return 'bg-info/10';
+  if (method === 'PATCH')  return 'bg-share/10';
   if (method === 'DELETE') return 'bg-error/10';
-  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'bg-accent/10';
   return 'bg-[rgba(242,237,228,.06)]';
 }
 
 export function methodBorderClass(method) {
   if (method === 'GET')    return 'border-l-success';
+  if (method === 'POST')   return 'border-l-warning';
+  if (method === 'PUT')    return 'border-l-info';
+  if (method === 'PATCH')  return 'border-l-share';
   if (method === 'DELETE') return 'border-l-error';
-  if (method === 'POST' || method === 'PUT' || method === 'PATCH') return 'border-l-accent';
   return 'border-l-border-strong';
 }
 

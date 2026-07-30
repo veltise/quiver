@@ -4,6 +4,8 @@ A fast, shareable HTTP client. Build requests, save them to your quiver, fire at
 
 Built with Next.js, Supabase, and Tailwind CSS.
 
+![Quiver](docs/image.png)
+
 ## Features
 
 - Request builder with params, headers, auth, and body editors (JSON, form, GraphQL, raw)

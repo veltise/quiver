@@ -740,12 +740,12 @@ export default function LiveSession({
               <LiveTabButton id="params" activeTab={activeTab} onClick={() => changeTab('params')} viewers={viewers} myId={myId}>
                 Params
                 {req.url?.includes('?') && (
-                  <span className="ml-1.5 text-xs text-muted">({req.url.split('?')[1].split('&').filter(Boolean).length})</span>
+                  <span className="ml-1.5 text-xs text-muted">· {req.url.split('?')[1].split('&').filter(Boolean).length}</span>
                 )}
               </LiveTabButton>
               <LiveTabButton id="headers" activeTab={activeTab} onClick={() => changeTab('headers')} viewers={viewers} myId={myId}>
                 Headers
-                {(req.headers?.length ?? 0) > 0 && <span className="ml-1.5 text-xs text-muted">({req.headers.length})</span>}
+                {(req.headers?.length ?? 0) > 0 && <span className="ml-1.5 text-xs text-muted">· {req.headers.length}</span>}
               </LiveTabButton>
               <LiveTabButton id="auth" activeTab={activeTab} onClick={() => changeTab('auth')} viewers={viewers} myId={myId}>
                 Auth
