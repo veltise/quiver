@@ -482,8 +482,16 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
         </div>
       )}
 
-      <div className="flex items-center border-b border-border-subtle px-2">
-        <div className="flex items-center gap-0.5 flex-1 min-w-0">
+      {/* overflow-x-auto + shrink-0 on both groups: when there isn't room for
+          tabs + status + actions on one line, scroll instead of compressing
+          past content width — a shrunk flex child has nowhere to put its
+          overflow, so text from adjacent buttons was rendering on top of
+          each other instead. overflow-y-hidden is load-bearing here, not
+          decorative: per spec, overflow-x set to anything but visible forces
+          the other axis's computed value from visible to auto too, so
+          overflow-x-auto alone silently turns on vertical scrolling as well. */}
+      <div className="flex items-center border-b border-border-subtle px-2 overflow-x-auto overflow-y-hidden">
+        <div className="flex items-center gap-0.5 shrink-0">
           {[
             { id: 'body', icon: FileText, label: 'Body' },
             { id: 'headers', icon: List, label: 'Headers', countVal: headerEntries.length },
@@ -506,7 +514,7 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
           ))}
         </div>
 
-        <div className="flex gap-1 shrink-0">
+        <div className="flex gap-1 shrink-0 ml-auto">
           {!hideStatusBar && (
             <div className="flex items-center gap-3 mr-2">
               {response.streaming && (
@@ -540,13 +548,13 @@ export default function ResponsePanel({ response, isLoading, onExtract, hideStat
             onClick={copyBody}
             className="flex items-center gap-1.5 text-body text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
-            <Copy size={11} />{copied ? 'Copied!' : 'Copy'}
+            <Copy size={11} /><span className="hidden md:inline">{copied ? 'Copied!' : 'Copy'}</span>
           </button>
           <button
             onClick={downloadBody}
             className="flex items-center gap-1.5 text-body text-muted hover:text-text transition-colors px-2 py-1 rounded border border-border hover:border-[rgba(242,237,228,.3)]"
           >
-            <Download size={11} />Save
+            <Download size={11} /><span className="hidden md:inline">Save</span>
           </button>
         </div>
       </div>
